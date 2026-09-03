@@ -13,18 +13,17 @@ import (
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/usuarios"
 )
 
-// Inicia um servidor TCP mock temporário em uma porta livre
-func iniciarServidorMock(t *testing.T) (net.Listener, string) {
+func iniciarServidorReal(t *testing.T) (net.Listener, string) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		t.Fatalf("Erro ao iniciar servidor de teste: %v", err)
+		t.Fatalf("Erro ao abrir porta para o servidor de teste: %v", err)
 	}
 
 	go func() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				return
+				return // Listener encerrado
 			}
 
 			go func(c net.Conn) {
@@ -57,16 +56,16 @@ func iniciarServidorMock(t *testing.T) (net.Listener, string) {
 }
 
 func TestFluxoCadastroELogin(t *testing.T) {
-	// Limpa o arquivo usuarios.json antes e depois do teste
 	_ = os.Remove("usuarios.json")
 	defer os.Remove("usuarios.json")
 
-	listener, endereco := iniciarServidorMock(t)
+	listener, endereco := iniciarServidorReal(t)
 	defer listener.Close()
 
+	// Usa o metodo original do seu projeto sem alterar a struct ou pacote conexao
 	cliente, err := conexao.ConectarTCP(endereco, 2*time.Second)
 	if err != nil {
-		t.Fatalf("Erro ao conectar cliente: %v", err)
+		t.Fatalf("Erro ao conectar clienteTCP: %v", err)
 	}
 	defer cliente.Fechar()
 
@@ -76,25 +75,25 @@ func TestFluxoCadastroELogin(t *testing.T) {
 		t.Fatalf("Falha no cadastro: sucesso=%v, err=%v", sucesso, err)
 	}
 
-	// Bloqueio de usuário duplicado
+	// Bloqueio de duplicado
 	sucessoDuplicado, _ := usuarios.CadastrarCliente(cliente, "motorista1", "outrasenha", protocolo.PerfilMotorista)
 	if sucessoDuplicado {
 		t.Fatalf("Erro: permitiu cadastrar usuario duplicado!")
 	}
 
-	// Login com credenciais válidas
+	// Login com sucesso
 	loginOk, err := usuarios.AutenticarCliente(cliente, "motorista1", "senha123", protocolo.PerfilMotorista)
 	if err != nil || !loginOk {
 		t.Fatalf("Falha no login com credenciais validas: loginOk=%v, err=%v", loginOk, err)
 	}
 
-	// Login com senha errada
+	// Senha errada
 	loginInvalido, _ := usuarios.AutenticarCliente(cliente, "motorista1", "senhaErrada", protocolo.PerfilMotorista)
 	if loginInvalido {
 		t.Fatalf("Erro: login aceito com senha incorreta!")
 	}
 
-	// Perfil não autorizado (motorista tentando acessar como passageiro)
+	// Perfil divergente
 	perfilErrado, _ := usuarios.AutenticarCliente(cliente, "motorista1", "senha123", protocolo.PerfilPassageiro)
 	if perfilErrado {
 		t.Fatalf("Erro: acesso permitido para perfil divergente!")
