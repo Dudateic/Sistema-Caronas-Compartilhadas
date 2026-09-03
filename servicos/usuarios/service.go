@@ -6,6 +6,8 @@
 package usuarios
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -25,8 +27,28 @@ const caminhoBancoUsuarios = "usuarios.json"
  */
 type UsuarioCadastrado struct {
 	TipoUsuario string `json:"tipo"`
+	IDUsuario   string `json:"id_usuario"`
 	Usuario     string `json:"usuario"`
 	Senha       string `json:"senha"`
+}
+
+// hashSimples aplica a formula (x² + 1) acumulando cada caractere
+func hashSimples(senha string) string {
+	var total uint64 = 0
+
+	for i := 0; i < len(senha); i++ {
+		x := uint64(senha[i]) // Valor numerico do caractere (ASCII)
+		total += (x*x + 1)    // Aplica x² + 1 e soma
+	}
+
+	return fmt.Sprintf("%d", total)
+}
+
+// gerarID gera um identificador hexadecimal unico de 8 bytes
+func gerarID() string {
+	b := make([]byte, 8)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 /**
@@ -39,12 +61,12 @@ func carregarUsuariosDoBanco() ([]UsuarioCadastrado, error) {
 		if os.IsNotExist(err) {
 			return []UsuarioCadastrado{}, nil
 		}
-		return nil, fmt.Errorf("falha ao abrir %s: %w", caminhoBancoUsuarios, err)
+		return nil, fmt.Errorf("Falha ao abrir %s: %w", caminhoBancoUsuarios, err)
 	}
 
 	var listaUsuarios []UsuarioCadastrado
 	if err := json.Unmarshal(dados, &listaUsuarios); err != nil {
-		return nil, fmt.Errorf("falha ao decodificar %s: %w", caminhoBancoUsuarios, err)
+		return nil, fmt.Errorf("Falha ao decodificar %s: %w", caminhoBancoUsuarios, err)
 	}
 
 	return listaUsuarios, nil
@@ -56,7 +78,7 @@ func carregarUsuariosDoBanco() ([]UsuarioCadastrado, error) {
 func salvarUsuariosNoBanco(usuarios []UsuarioCadastrado) error {
 	dados, err := json.MarshalIndent(usuarios, "", "  ")
 	if err != nil {
-		return fmt.Errorf("erro ao serializar lista de usuarios: %w", err)
+		return fmt.Errorf("Erro ao serializar lista de usuarios: %w", err)
 	}
 	return os.WriteFile(caminhoBancoUsuarios, dados, 0644)
 }
@@ -102,9 +124,10 @@ func ProcessarCadastro(conn net.Conn, dadosBrutos string) {
 	}
 
 	novoUsuario := UsuarioCadastrado{
+		IDUsuario:   gerarID(),
 		TipoUsuario: req.TipoUsuario,
 		Usuario:     req.Usuario,
-		Senha:       req.Senha,
+		Senha:       hashSimples(req.Senha),
 	}
 
 	usuarios = append(usuarios, novoUsuario)
@@ -139,7 +162,7 @@ func responderCadastro(conn net.Conn, sucesso bool, mensagem string) {
 func ProcessarLogin(conn net.Conn, dadosBrutos string) {
 	var req protocolo.LoginRequisicao
 	if err := json.Unmarshal([]byte(dadosBrutos), &req); err != nil {
-		responderLogin(conn, false, "Formato de login invalido", "")
+		responderLogin(conn, false, "Formato de login invalido", "", "")
 		return
 	}
 
@@ -151,34 +174,37 @@ func ProcessarLogin(conn net.Conn, dadosBrutos string) {
 
 	if err != nil {
 		fmt.Printf("[AUTH] Erro ao carregar base de dados: %v\n", err)
-		responderLogin(conn, false, "Erro interno no servidor", "")
+		responderLogin(conn, false, "Erro interno no servidor", "", "")
 		return
 	}
 
+	senhaCalculada := hashSimples(req.Senha)
 	var usuarioLogado *UsuarioCadastrado
-	for _, u := range usuarios {
-		if u.Usuario == req.Usuario && u.Senha == req.Senha {
-			usuarioLogado = &u
+
+	for i := range usuarios {
+		if usuarios[i].Usuario == req.Usuario && usuarios[i].Senha == senhaCalculada {
+			usuarioLogado = &usuarios[i]
 			break
 		}
 	}
 
 	if usuarioLogado != nil {
 		msg := fmt.Sprintf("Bem-vindo(a), %s!", usuarioLogado.Usuario)
-		responderLogin(conn, true, msg, usuarioLogado.TipoUsuario)
+		responderLogin(conn, true, msg, usuarioLogado.TipoUsuario, usuarioLogado.IDUsuario)
 		fmt.Printf("[AUTH] Login aprovado: '%s' (%s)\n", usuarioLogado.Usuario, usuarioLogado.TipoUsuario)
 	} else {
-		responderLogin(conn, false, "Usuario ou senha incorretos", "")
+		responderLogin(conn, false, "Usuario ou senha incorretos", "", "")
 		fmt.Printf("[AUTH] Login rejeitado para: '%s'\n", req.Usuario)
 	}
 }
 
 /**
- * Envia de volta para o cliente a resposta de login informando se entrou e qual o perfil.
+ * Envia de volta para o cliente a resposta de login informando se entrou, o perfil e o ID.
  */
-func responderLogin(conn net.Conn, sucesso bool, mensagem string, tipoUsuario string) {
+func responderLogin(conn net.Conn, sucesso bool, mensagem string, tipoUsuario string, idUsuario string) {
 	resp := protocolo.LoginResposta{
 		Tipo:        protocolo.TipoLoginRes,
+		IDUsuario:   idUsuario,
 		Sucesso:     sucesso,
 		Mensagem:    mensagem,
 		TipoUsuario: tipoUsuario,
@@ -203,12 +229,12 @@ func CadastrarCliente(cliente *conexao.ClienteTCP, usuario string, senha string,
 	}
 
 	if err := cliente.EnviarJSON(req); err != nil {
-		return false, fmt.Errorf("erro ao transmitir dados de cadastro: %w", err)
+		return false, fmt.Errorf("Erro ao transmitir dados de cadastro: %w", err)
 	}
 
 	var resp protocolo.CadastroResposta
 	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
-		return false, fmt.Errorf("erro ao ler resposta do servidor: %w", err)
+		return false, fmt.Errorf("Erro ao ler resposta do servidor: %w", err)
 	}
 
 	if !resp.Sucesso {
@@ -236,12 +262,12 @@ func AutenticarCliente(cliente *conexao.ClienteTCP, usuario string, senha string
 	}
 
 	if err := cliente.EnviarJSON(req); err != nil {
-		return false, fmt.Errorf("erro ao transmitir credenciais: %w", err)
+		return false, fmt.Errorf("Erro ao transmitir credenciais: %w", err)
 	}
 
 	var resp protocolo.LoginResposta
 	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
-		return false, fmt.Errorf("erro ao ler resposta do servidor: %w", err)
+		return false, fmt.Errorf("Erro ao ler resposta do servidor: %w", err)
 	}
 
 	if !resp.Sucesso {
