@@ -1,0 +1,297 @@
+/**
+ * Pacote responsavel pelo gerenciamento de estado e regras de negocio das caronas.
+ *
+ * @author Maria Eduarda
+ */
+package caronas
+
+import (
+	"encoding/json"
+	"fmt"
+	"net"
+	"sync"
+
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+)
+
+// Estado compartilhado em memoria protegido por Mutex
+var (
+	CaronasRegistradas []protocolo.CaronaDetalhada
+	ProximoCaronaID    = 1
+	MutexCaronas       sync.Mutex
+)
+
+// -----------------------------------------------------------------------------
+// OPERACOES DO SERVIDOR
+// -----------------------------------------------------------------------------
+
+/**
+ * Valida a rota e os dados da carona, monta os trechos e armazena a viagem em memoria.
+ *
+ * @param conn        Conexao ativa do motorista.
+ * @param dadosBrutos Linha em texto JSON com os dados da publicacao.
+ */
+func ProcessarPublicarCarona(conn net.Conn, dadosBrutos string) {
+	var req protocolo.PublicarCaronaRequisicao
+	if err := json.Unmarshal([]byte(dadosBrutos), &req); err != nil {
+		responderPublicacao(conn, false, "JSON malformado", 0)
+		return
+	}
+
+	if len(req.Rota) < 2 {
+		responderPublicacao(conn, false, "A rota precisa de pelo menos 2 cidades", 0)
+		return
+	}
+
+	if req.AssentosTotais <= 0 {
+		responderPublicacao(conn, false, "O total de assentos deve ser maior que zero", 0)
+		return
+	}
+
+	if req.PrecoPorTrecho <= 0 {
+		responderPublicacao(conn, false, "O preco por trecho deve ser positivo", 0)
+		return
+	}
+
+	MutexCaronas.Lock()
+	defer MutexCaronas.Unlock()
+
+	// Divide a sequencia de cidades em trechos individuais consecutivos
+	var trechos []protocolo.TrechoInfo
+	for i := 0; i < len(req.Rota)-1; i++ {
+		trechos = append(trechos, protocolo.TrechoInfo{
+			Origem:         req.Rota[i],
+			Destino:        req.Rota[i+1],
+			AssentosLivres: req.AssentosTotais,
+			Preco:          req.PrecoPorTrecho,
+			Passageiros:    []string{},
+		})
+	}
+
+	novaCarona := protocolo.CaronaDetalhada{
+		ID:             ProximoCaronaID,
+		Motorista:      req.Motorista,
+		Data:           req.Data,
+		Horario:        req.Horario,
+		AssentosTotais: req.AssentosTotais,
+		PrecoPorTrecho: req.PrecoPorTrecho,
+		Rota:           req.Rota,
+		Trechos:        trechos,
+	}
+
+	CaronasRegistradas = append(CaronasRegistradas, novaCarona)
+	caronaID := ProximoCaronaID
+	ProximoCaronaID++
+
+	fmt.Printf("[CARONA] Nova carona #%d cadastrada por '%s' (%s -> %s)\n",
+		caronaID, req.Motorista, req.Rota[0], req.Rota[len(req.Rota)-1])
+
+	responderPublicacao(conn, true, "Carona publicada com sucesso", caronaID)
+}
+
+/**
+ * Envia ao motorista a confirmacao de publicacao e o ID gerado.
+ */
+func responderPublicacao(conn net.Conn, sucesso bool, mensagem string, id int) {
+	resp := protocolo.PublicarCaronaResposta{
+		Tipo:     protocolo.TipoPublicarCaronaRes,
+		Sucesso:  sucesso,
+		Mensagem: mensagem,
+		CaronaID: id,
+	}
+	_ = json.NewEncoder(conn).Encode(resp)
+}
+
+/**
+ * Filtra e devolve todas as caronas criadas pelo motorista solicitante.
+ *
+ * @param conn        Conexao de retorno para o cliente.
+ * @param dadosBrutos Linha em texto JSON com o identificador do motorista.
+ */
+func ProcessarConsultarCaronas(conn net.Conn, dadosBrutos string) {
+	var req protocolo.ConsultarCaronasRequisicao
+	if err := json.Unmarshal([]byte(dadosBrutos), &req); err != nil {
+		return
+	}
+
+	MutexCaronas.Lock()
+	defer MutexCaronas.Unlock()
+
+	var minhas []protocolo.CaronaDetalhada
+	for _, c := range CaronasRegistradas {
+		if c.Motorista == req.Motorista {
+			minhas = append(minhas, c)
+		}
+	}
+
+	resp := protocolo.ConsultarCaronasResposta{
+		Tipo:     protocolo.TipoConsultarCaronasRes,
+		Sucesso:  true,
+		Mensagem: "Consulta concluida",
+		Caronas:  minhas,
+	}
+	_ = json.NewEncoder(conn).Encode(resp)
+}
+
+/**
+ * Localiza a viagem pelo ID e remove da memoria caso pertencente ao motorista solicitante.
+ *
+ * @param conn        Conexao de retorno para o cliente.
+ * @param dadosBrutos Linha em texto JSON com o ID da viagem e login do motorista.
+ */
+func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
+	var req protocolo.CancelarCaronaRequisicao
+	if err := json.Unmarshal([]byte(dadosBrutos), &req); err != nil {
+		return
+	}
+
+	MutexCaronas.Lock()
+	defer MutexCaronas.Unlock()
+
+	idx := -1
+	for i, c := range CaronasRegistradas {
+		if c.ID == req.CaronaID && c.Motorista == req.Motorista {
+			idx = i
+			break
+		}
+	}
+
+	if idx == -1 {
+		resp := protocolo.CancelarCaronaResposta{
+			Tipo:     protocolo.TipoCancelarCaronaRes,
+			Sucesso:  false,
+			Mensagem: "Carona nao encontrada ou permissao negada",
+		}
+		_ = json.NewEncoder(conn).Encode(resp)
+		return
+	}
+
+	// Remove a viagem da lista em memoria
+	CaronasRegistradas = append(CaronasRegistradas[:idx], CaronasRegistradas[idx+1:]...)
+
+	fmt.Printf("[CARONA] Carona #%d cancelada pelo motorista '%s'\n", req.CaronaID, req.Motorista)
+
+	resp := protocolo.CancelarCaronaResposta{
+		Tipo:     protocolo.TipoCancelarCaronaRes,
+		Sucesso:  true,
+		Mensagem: "Carona cancelada com sucesso",
+	}
+	_ = json.NewEncoder(conn).Encode(resp)
+}
+
+// -----------------------------------------------------------------------------
+// OPERACOES DO CLIENTE (MOTORISTA)
+// -----------------------------------------------------------------------------
+
+/**
+ * Envia pedido de publicacao de rota pelo ClienteTCP e retorna o ID da viagem criada.
+ *
+ * @param cliente   Instancia ativa de conexao com o servidor.
+ * @param motorista Nome do motorista autenticado.
+ * @param rota      Lista sequencial de cidades da viagem.
+ * @param data      Data de partida.
+ * @param horario   Horario de saida.
+ * @param assentos  Numero total de vagas disponiveis.
+ * @param preco     Valor cobrado por cada trecho percorrido.
+ */
+func PublicarCarona(cliente *conexao.ClienteTCP, motorista string, rota []string, data, horario string, assentos int, preco float64) (int, error) {
+	req := protocolo.PublicarCaronaRequisicao{
+		Tipo:           protocolo.TipoPublicarCaronaReq,
+		Motorista:      motorista,
+		Rota:           rota,
+		Data:           data,
+		Horario:        horario,
+		AssentosTotais: assentos,
+		PrecoPorTrecho: preco,
+	}
+
+	if err := cliente.EnviarJSON(req); err != nil {
+		return 0, fmt.Errorf("falha ao enviar publicacao: %w", err)
+	}
+
+	var resp protocolo.PublicarCaronaResposta
+	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
+		return 0, fmt.Errorf("falha ao receber resposta do servidor: %w", err)
+	}
+
+	if !resp.Sucesso {
+		fmt.Printf("Falha ao publicar: %s\n", resp.Mensagem)
+		return 0, nil
+	}
+
+	fmt.Printf("%s! ID da Carona: %d\n", resp.Mensagem, resp.CaronaID)
+	return resp.CaronaID, nil
+}
+
+/**
+ * Requisita ao servidor as caronas cadastradas pelo motorista e exibe no terminal.
+ *
+ * @param cliente   Instancia ativa de conexao com o servidor.
+ * @param motorista Nome do motorista autenticado.
+ */
+func ConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) ([]protocolo.CaronaDetalhada, error) {
+	req := protocolo.ConsultarCaronasRequisicao{
+		Tipo:      protocolo.TipoConsultarCaronasReq,
+		Motorista: motorista,
+	}
+
+	if err := cliente.EnviarJSON(req); err != nil {
+		return nil, fmt.Errorf("falha ao solicitar caronas: %w", err)
+	}
+
+	var resp protocolo.ConsultarCaronasResposta
+	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
+		return nil, fmt.Errorf("falha ao ler caronas: %w", err)
+	}
+
+	if len(resp.Caronas) == 0 {
+		fmt.Println("Nenhuma carona cadastrada.")
+		return nil, nil
+	}
+
+	fmt.Println("\n================ SUAS CARONAS ================")
+	for _, c := range resp.Caronas {
+		fmt.Printf("\n[Carona #%d] Data: %s | Horario: %s | Assentos: %d\n", c.ID, c.Data, c.Horario, c.AssentosTotais)
+		fmt.Printf("Rota: %v\n", c.Rota)
+		fmt.Println("Trechos:")
+		for _, t := range c.Trechos {
+			fmt.Printf("  - %s -> %s (Vagas livres: %d | R$ %.2f) | Passageiros: %v\n",
+				t.Origem, t.Destino, t.AssentosLivres, t.Preco, t.Passageiros)
+		}
+	}
+	fmt.Println("==============================================")
+	return resp.Caronas, nil
+}
+
+/**
+ * Envia pedido ao servidor para cancelar uma carona pelo ID.
+ *
+ * @param cliente   Instancia ativa de conexao com o servidor.
+ * @param caronaID  Identificador unico da carona a ser cancelada.
+ * @param motorista Nome do motorista que registrou a carona.
+ */
+func CancelarCarona(cliente *conexao.ClienteTCP, caronaID int, motorista string) (bool, error) {
+	req := protocolo.CancelarCaronaRequisicao{
+		Tipo:      protocolo.TipoCancelarCaronaReq,
+		CaronaID:  caronaID,
+		Motorista: motorista,
+	}
+
+	if err := cliente.EnviarJSON(req); err != nil {
+		return false, fmt.Errorf("falha ao enviar cancelamento: %w", err)
+	}
+
+	var resp protocolo.CancelarCaronaResposta
+	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
+		return false, fmt.Errorf("falha ao receber resposta do cancelamento: %w", err)
+	}
+
+	if !resp.Sucesso {
+		fmt.Printf("Erro ao cancelar: %s\n", resp.Mensagem)
+		return false, nil
+	}
+
+	fmt.Printf("%s!\n", resp.Mensagem)
+	return true, nil
+}
