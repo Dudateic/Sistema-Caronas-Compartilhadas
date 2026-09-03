@@ -51,6 +51,7 @@ type LoginRequisicao struct {
  */
 type LoginResposta struct {
 	Tipo        string `json:"tipo"`
+	IDUsuario   string `json:"id_usuario"`
 	Sucesso     bool   `json:"sucesso"`
 	Mensagem    string `json:"mensagem"`
 	TipoUsuario string `json:"tipo_usuario,omitempty"`
@@ -66,6 +67,7 @@ type LoginResposta struct {
  */
 type CadastroRequisicao struct {
 	Tipo        string `json:"tipo"`
+	IDUsuario   string `json:"id_usuario"`
 	Usuario     string `json:"usuario"`
 	Senha       string `json:"senha"`
 	TipoUsuario string `json:"tipo_usuario"`

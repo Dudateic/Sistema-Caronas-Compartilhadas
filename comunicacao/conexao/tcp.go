@@ -15,7 +15,7 @@ import (
 
 const (
 	// Host e porta padrao para conexao.
-	EnderecoPadrao = "localhost:8081"
+	EnderecoPadrao = ":8081"
 
 	// Tempo limite maximo para aguardar a conexao antes de abortar.
 	TimeoutConexaoPadrao = 5 * time.Second
@@ -54,7 +54,7 @@ func ConectarTCP(endereco string, timeout ...time.Duration) (*ClienteTCP, error)
 	// DialTimeout evita travamento infinito se o servidor estiver offline
 	conn, err := net.DialTimeout("tcp", endereco, limite)
 	if err != nil {
-		return nil, fmt.Errorf("falha ao conectar a %s: %w", endereco, err)
+		return nil, fmt.Errorf("Falha ao conectar a %s: %w", endereco, err)
 	}
 
 	// Vincula o leitor de buffer e os serializadores JSON a conexao
@@ -84,7 +84,7 @@ func (c *ClienteTCP) Fechar() error {
 func (c *ClienteTCP) EnviarJSON(dados any) error {
 	// Encode serializa direto no socket sem alocar buffers manuais
 	if err := c.encoder.Encode(dados); err != nil {
-		return fmt.Errorf("erro ao serializar payload: %w", err)
+		return fmt.Errorf("Erro ao serializar payload: %w", err)
 	}
 	return nil
 }
@@ -96,7 +96,7 @@ func (c *ClienteTCP) EnviarJSON(dados any) error {
 func (c *ClienteTCP) LerEDecodificarJSON(destino any) error {
 	// Decode le continuamente do socket e desserializa no destino
 	if err := c.decoder.Decode(destino); err != nil {
-		return fmt.Errorf("erro ao decodificar payload: %w", err)
+		return fmt.Errorf("Erro ao decodificar payload: %w", err)
 	}
 	return nil
 }
@@ -107,7 +107,7 @@ func (c *ClienteTCP) LerEDecodificarJSON(destino any) error {
 func (c *ClienteTCP) LerLinhaTexto() (string, error) {
 	linha, err := c.leitor.ReadString('\n')
 	if err != nil {
-		return "", fmt.Errorf("erro ao ler socket: %w", err)
+		return "", fmt.Errorf("Erro ao ler socket: %w", err)
 	}
 	// TrimSpace limpa caracteres residuais como \r e \n
 	return strings.TrimSpace(linha), nil
