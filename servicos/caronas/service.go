@@ -13,6 +13,7 @@ import (
 
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/persistencia"
 )
 
 // Estado compartilhado em memoria protegido por Mutex
@@ -22,9 +23,25 @@ var (
 	MutexCaronas       sync.Mutex
 )
 
-// -----------------------------------------------------------------------------
-// OPERACOES DO SERVIDOR
-// -----------------------------------------------------------------------------
+const ArquivoCaronas = "caronas.json"
+
+// InicializarCaronas deve ser chamado no main do servidor
+func InicializarCaronas() error {
+	MutexCaronas.Lock()
+	defer MutexCaronas.Unlock()
+
+	if err := persistencia.CarregarJSON(ArquivoCaronas, &CaronasRegistradas); err != nil {
+		return err
+	}
+
+	// Recalcula o proximo ID com base no que veio do disco
+	for _, c := range CaronasRegistradas {
+		if c.ID >= ProximoCaronaID {
+			ProximoCaronaID = c.ID + 1
+		}
+	}
+	return nil
+}
 
 /**
  * Valida a rota e os dados da carona, monta os trechos e armazena a viagem em memoria.
@@ -83,6 +100,11 @@ func ProcessarPublicarCarona(conn net.Conn, dadosBrutos string) {
 	CaronasRegistradas = append(CaronasRegistradas, novaCarona)
 	caronaID := ProximoCaronaID
 	ProximoCaronaID++
+
+	// Persiste o novo estado em disco no servidor
+	if err := persistencia.SalvarJSON(ArquivoCaronas, CaronasRegistradas); err != nil {
+		fmt.Printf("[ERRO] Falha ao persistir caronas: %v\n", err)
+	}
 
 	fmt.Printf("[CARONA] Nova carona #%d cadastrada por '%s' (%s -> %s)\n",
 		caronaID, req.Motorista, req.Rota[0], req.Rota[len(req.Rota)-1])
@@ -170,6 +192,11 @@ func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 	// Remove a viagem da lista em memoria
 	CaronasRegistradas = append(CaronasRegistradas[:idx], CaronasRegistradas[idx+1:]...)
 
+	// Persiste a remocao em disco no servidor
+	if err := persistencia.SalvarJSON(ArquivoCaronas, CaronasRegistradas); err != nil {
+		fmt.Printf("[ERRO] Falha ao persistir cancelamento de carona: %v\n", err)
+	}
+
 	fmt.Printf("[CARONA] Carona #%d cancelada pelo motorista '%s'\n", req.CaronaID, req.Motorista)
 
 	resp := protocolo.CancelarCaronaResposta{
@@ -179,10 +206,6 @@ func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 	}
 	_ = json.NewEncoder(conn).Encode(resp)
 }
-
-// -----------------------------------------------------------------------------
-// OPERACOES DO CLIENTE (MOTORISTA)
-// -----------------------------------------------------------------------------
 
 /**
  * Envia pedido de publicacao de rota pelo ClienteTCP e retorna o ID da viagem criada.
@@ -250,7 +273,7 @@ func ConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) ([]protocol
 		return nil, nil
 	}
 
-	fmt.Println("\n================ SUAS CARONAS ================")
+	fmt.Println("\n                SUAS CARONAS                ")
 	for _, c := range resp.Caronas {
 		fmt.Printf("\n[Carona #%d] Data: %s | Horario: %s | Assentos: %d\n", c.ID, c.Data, c.Horario, c.AssentosTotais)
 		fmt.Printf("Rota: %v\n", c.Rota)
@@ -260,7 +283,7 @@ func ConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) ([]protocol
 				t.Origem, t.Destino, t.AssentosLivres, t.Preco, t.Passageiros)
 		}
 	}
-	fmt.Println("==============================================")
+	fmt.Println("")
 	return resp.Caronas, nil
 }
 

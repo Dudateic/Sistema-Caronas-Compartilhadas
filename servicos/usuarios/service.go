@@ -11,16 +11,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"sync"
 
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/persistencia"
 )
 
-var mutexArquivo sync.Mutex
+var mutexUsuarios sync.Mutex
 
-const caminhoBancoUsuarios = "usuarios.json"
+const ArquivoUsuarios = "usuarios.json"
 
 /**
  * Estrutura interna para salvar os usuarios no arquivo JSON.
@@ -52,35 +52,24 @@ func gerarID() string {
 }
 
 /**
- * Abre o arquivo usuarios.json e carrega a lista de contas salvas.
- * Se o arquivo ainda nao existir, retorna uma lista vazia.
+ * Carrega a lista de contas salvas utilizando o servico de persistencia.
  */
 func carregarUsuariosDoBanco() ([]UsuarioCadastrado, error) {
-	dados, err := os.ReadFile(caminhoBancoUsuarios)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return []UsuarioCadastrado{}, nil
-		}
-		return nil, fmt.Errorf("Falha ao abrir %s: %w", caminhoBancoUsuarios, err)
-	}
-
 	var listaUsuarios []UsuarioCadastrado
-	if err := json.Unmarshal(dados, &listaUsuarios); err != nil {
-		return nil, fmt.Errorf("Falha ao decodificar %s: %w", caminhoBancoUsuarios, err)
+	if err := persistencia.CarregarJSON(ArquivoUsuarios, &listaUsuarios); err != nil {
+		return nil, fmt.Errorf("falha ao carregar usuarios via persistencia: %w", err)
 	}
-
 	return listaUsuarios, nil
 }
 
 /**
- * Grava a lista atualizada de usuarios no arquivo usuarios.json.
+ * Grava a lista atualizada de usuarios no arquivo via servico de persistencia.
  */
 func salvarUsuariosNoBanco(usuarios []UsuarioCadastrado) error {
-	dados, err := json.MarshalIndent(usuarios, "", "  ")
-	if err != nil {
-		return fmt.Errorf("Erro ao serializar lista de usuarios: %w", err)
+	if err := persistencia.SalvarJSON(ArquivoUsuarios, usuarios); err != nil {
+		return fmt.Errorf("falha ao persistir lista de usuarios: %w", err)
 	}
-	return os.WriteFile(caminhoBancoUsuarios, dados, 0644)
+	return nil
 }
 
 /**
@@ -106,8 +95,8 @@ func ProcessarCadastro(conn net.Conn, dadosBrutos string) {
 		return
 	}
 
-	mutexArquivo.Lock()
-	defer mutexArquivo.Unlock()
+	mutexUsuarios.Lock()
+	defer mutexUsuarios.Unlock()
 
 	usuarios, err := carregarUsuariosDoBanco()
 	if err != nil {
@@ -168,9 +157,9 @@ func ProcessarLogin(conn net.Conn, dadosBrutos string) {
 
 	fmt.Printf("[AUTH] Tentativa de login: Usuario='%s'\n", req.Usuario)
 
-	mutexArquivo.Lock()
+	mutexUsuarios.Lock()
 	usuarios, err := carregarUsuariosDoBanco()
-	mutexArquivo.Unlock()
+	mutexUsuarios.Unlock()
 
 	if err != nil {
 		fmt.Printf("[AUTH] Erro ao carregar base de dados: %v\n", err)

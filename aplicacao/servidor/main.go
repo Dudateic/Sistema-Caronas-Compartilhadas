@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/caronas"
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/persistencia"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/reservas"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/usuarios"
 )
@@ -21,6 +23,15 @@ func main() {
 	fmt.Println()
 	fmt.Println("         VAIJUNTO   SERVIDOR                ")
 	fmt.Println()
+
+	// 1. Inicializa os dados persistidos do servidor
+	if err := caronas.InicializarCaronas(); err != nil {
+		fmt.Printf("[ERRO] Falha ao inicializar caronas: %v\n", err)
+		return
+	}
+	if err := reservas.InicializarReservas(); err != nil {
+		fmt.Printf("[ERRO] Falha ao inicializar reservas: %v\n", err)
+	}
 
 	endereco := conexao.EnderecoPadrao
 	if len(os.Args) > 1 {
@@ -46,26 +57,25 @@ func main() {
 		fmt.Println()
 		fmt.Println("Encerrando o servidor VAIJUNTO...")
 		_ = listener.Close()
-		os.Exit(0)
 	}()
 
 	// Loop principal aceitando conexoes
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			// Se o listener foi fechado, encerra o loop
-			select {
-			case <-sinais:
-				return
-			default:
-				fmt.Printf("[ERRO] Falha ao aceitar conexao: %v\n", err)
-				continue
+			// Se o listener foi fechado intencionalmente, encerra silenciosamente
+			if errors.Is(err, net.ErrClosed) {
+				break
 			}
+			fmt.Printf("[ERRO] Falha ao aceitar conexao: %v\n", err)
+			continue
 		}
 
 		// Processa cada cliente conectado de forma concorrente
 		go tratarCliente(conn)
 	}
+
+	fmt.Println("Servidor finalizado com sucesso. Ate logo!")
 }
 
 /**
@@ -100,6 +110,9 @@ func tratarCliente(conn net.Conn) {
 			fmt.Printf("[ERRO] Payload malformado de %s: %v\n", remoto, err)
 			continue
 		}
+
+		// Registra a requisicao no arquivo de log do servidor
+		persistencia.RegistrarLog(conn, base.Tipo, linhaLimpa)
 
 		// Roteia para o servico correspondente
 		rotearRequisicao(conn, base.Tipo, linhaLimpa, remoto)

@@ -14,6 +14,7 @@ import (
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/caronas"
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/persistencia"
 )
 
 var (
@@ -21,6 +22,26 @@ var (
 	ProximoReservaID    = 1
 	MutexReservas       sync.Mutex
 )
+
+const ArquivoReservas = "reservas.json"
+
+// InicializarReservas deve ser chamado no main do servidor
+func InicializarReservas() error {
+	MutexReservas.Lock()
+	defer MutexReservas.Unlock()
+
+	if err := persistencia.CarregarJSON(ArquivoReservas, &ReservasRegistradas); err != nil {
+		return err
+	}
+
+	// Recalcula o proximo ID com base no historico do disco
+	for _, r := range ReservasRegistradas {
+		if r.ID >= ProximoReservaID {
+			ProximoReservaID = r.ID + 1
+		}
+	}
+	return nil
+}
 
 /**
  * Procura rotas diretas e combinadas entre diferentes caronas para a data informada.
@@ -209,6 +230,14 @@ func ProcessarReservarItinerario(conn net.Conn, dadosBrutos string) {
 	}
 	ReservasRegistradas = append(ReservasRegistradas, novaReserva)
 
+	// Persiste o estado atualizado de reservas e o decremento das vagas nas caronas
+	if err := persistencia.SalvarJSON(ArquivoReservas, ReservasRegistradas); err != nil {
+		fmt.Printf("[ERRO] Falha ao persistir reservas: %v\n", err)
+	}
+	if err := persistencia.SalvarJSON(caronas.ArquivoCaronas, caronas.CaronasRegistradas); err != nil {
+		fmt.Printf("[ERRO] Falha ao persistir caronas apos reserva: %v\n", err)
+	}
+
 	fmt.Printf("[RESERVA] Reserva #%d confirmada para '%s' (R$ %.2f)\n", reservaID, req.Passageiro, precoTotal)
 	responderReserva(conn, true, "Reserva confirmada com sucesso!", reservaID)
 }
@@ -306,6 +335,14 @@ func ProcessarCancelarReserva(conn net.Conn, dadosBrutos string) {
 				}
 			}
 		}
+	}
+
+	// Persiste a remocao da reserva e os assentos devolvidos no disco do servidor
+	if err := persistencia.SalvarJSON(ArquivoReservas, ReservasRegistradas); err != nil {
+		fmt.Printf("[ERRO] Falha ao persistir reservas apos cancelamento: %v\n", err)
+	}
+	if err := persistencia.SalvarJSON(caronas.ArquivoCaronas, caronas.CaronasRegistradas); err != nil {
+		fmt.Printf("[ERRO] Falha ao persistir caronas apos restauracao de vagas: %v\n", err)
 	}
 
 	fmt.Printf("[RESERVA] Reserva #%d cancelada para '%s'\n", req.ReservaID, req.Passageiro)
