@@ -237,10 +237,37 @@ func acaoConsultarReservas(cliente *conexao.ClienteTCP, passageiro string) {
 func acaoCancelarReserva(cliente *conexao.ClienteTCP, passageiro string) {
 	fmt.Println()
 	fmt.Println("         CANCELAR RESERVA         ")
-	idStr := lerEntrada("Informe o ID da reserva que deseja cancelar: ")
+
+	// Busca as reservas do passageiro
+	listaReservas, err := reservas.ConsultarMinhasReservas(cliente, passageiro)
+	if err != nil {
+		fmt.Printf("[ERRO] Falha ao consultar reservas: %v\n", err)
+		return
+	}
+
+	if len(listaReservas) == 0 {
+		fmt.Println("Voce nao possui nenhuma reserva para cancelar.")
+		return
+	}
+
+	// Lista as reservas na tela mostrando o ID em destaque
+	fmt.Println("\nSuas Reservas Ativas:")
+	for _, r := range listaReservas {
+		origem := r.Trechos[0].Origem
+		destino := r.Trechos[len(r.Trechos)-1].Destino
+		fmt.Printf(" -> [ID: %d] Data: %s | %s -> %s | R$ %.2f\n",
+			r.ID, r.Data, origem, destino, r.PrecoTotal)
+	}
+
+	idStr := lerEntrada("Informe o ID da reserva que deseja cancelar (ou 0 para voltar): ")
 	id, err := strconv.Atoi(idStr)
-	if err != nil || id <= 0 {
+
+	if err != nil || id < 0 {
 		fmt.Println("[ERRO] ID invalido.")
+		return
+	}
+	if id == 0 {
+		fmt.Println("Cancelamento abortado.")
 		return
 	}
 

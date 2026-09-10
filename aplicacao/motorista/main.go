@@ -227,10 +227,28 @@ func acaoConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) {
  */
 func acaoCancelarCarona(cliente *conexao.ClienteTCP, motorista string) {
 	fmt.Println("\n                 CANCELAR CARONA                    ")
-	idStr := lerEntrada("Informe o ID da carona que deseja cancelar: ")
+
+	// Lista as caronas antes de pedir o ID
+	lista, err := caronas.ConsultarCaronas(cliente, motorista)
+	if err != nil {
+		fmt.Printf("[ERRO] Falha ao consultar caronas: %v\n", err)
+		return
+	}
+
+	// Se não tiver nenhuma carona, a própria função acima já avisa e retorna vazia
+	if len(lista) == 0 {
+		return
+	}
+
+	idStr := lerEntrada("Informe o ID da carona que deseja cancelar (ou 0 para voltar): ")
 	id, err := strconv.Atoi(idStr)
-	if err != nil || id <= 0 {
+
+	if err != nil || id < 0 {
 		fmt.Println("[ERRO] ID invalido.")
+		return
+	}
+	if id == 0 {
+		fmt.Println("Cancelamento abortado.")
 		return
 	}
 
