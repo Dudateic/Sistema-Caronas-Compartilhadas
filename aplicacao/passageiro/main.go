@@ -155,7 +155,7 @@ func acaoBuscarEReservar(cliente *conexao.ClienteTCP, passageiro string) {
 	fmt.Println("         BUSCAR ITINERARIOS         ")
 	origem := lerEntrada("Cidade de partida (Origem): ")
 	destino := lerEntrada("Cidade de chegada (Destino): ")
-	data := lerEntrada("Data da viagem (AAAA MM DD): ")
+	data := lerEntrada("Data da viagem (AAAA-MM-DD): ")
 
 	if origem == "" || destino == "" || data == "" {
 		fmt.Println("[ERRO] Origem, destino e data sao campos obrigatorios.")
@@ -169,10 +169,14 @@ func acaoBuscarEReservar(cliente *conexao.ClienteTCP, passageiro string) {
 		return
 	}
 
-	if len(itinerarios) == 0 {
-		return
+	fmt.Println("\n               ITINERARIOS ENCONTRADOS                ")
+	for i, it := range itinerarios {
+		fmt.Printf("\nOpcao [%d] - Preco Total: R$ %.2f\n", i+1, it.PrecoTotal)
+		for _, t := range it.Trechos {
+			fmt.Printf("   Trecho: %s -> %s | Horario: %s | Motorista: %s | R$ %.2f\n",
+				t.Origem, t.Destino, t.Horario, t.Motorista, t.Preco)
+		}
 	}
-
 	fmt.Println()
 	escolhaStr := lerEntrada("Deseja reservar alguma dessas opcoes? Digite o numero da opcao (ou 0 para cancelar): ")
 	escolha, err := strconv.Atoi(escolhaStr)
@@ -203,10 +207,27 @@ func acaoBuscarEReservar(cliente *conexao.ClienteTCP, passageiro string) {
 func acaoConsultarReservas(cliente *conexao.ClienteTCP, passageiro string) {
 	fmt.Println()
 	fmt.Println("Consultando suas reservas ativas...")
-	_, err := reservas.ConsultarMinhasReservas(cliente, passageiro)
+
+	listaReservas, err := reservas.ConsultarMinhasReservas(cliente, passageiro)
 	if err != nil {
 		fmt.Printf("[ERRO] Falha ao consultar reservas: %v\n", err)
 		return
+	}
+
+	if len(listaReservas) == 0 {
+		fmt.Println("Voce nao possui nenhuma reserva ativa.")
+		return
+	}
+
+	// Loop para listar os trechos na tela
+	fmt.Println("\n               SUAS RESERVAS                ")
+	for _, r := range listaReservas {
+		fmt.Printf("\n[Reserva #%d] Data: %s | Preco Total: R$ %.2f\n", r.ID, r.Data, r.PrecoTotal)
+		fmt.Println("Trechos reservados:")
+		for _, t := range r.Trechos {
+			fmt.Printf("  - %s -> %s | Horario: %s | Motorista: %s | R$ %.2f\n",
+				t.Origem, t.Destino, t.Horario, t.Motorista, t.Preco)
+		}
 	}
 }
 
