@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
@@ -24,6 +25,10 @@ var (
 )
 
 const ArquivoReservas = "reservas.json"
+
+var NotificacoesRegistradas []protocolo.Notificacao
+
+const ArquivoNotificacoes = "notificacoes.json"
 
 // InicializarReservas deve ser chamado no main do servidor
 func InicializarReservas() error {
@@ -438,4 +443,79 @@ func CancelarMinhaReserva(cliente *conexao.ClienteTCP, reservaID int, passageiro
 	}
 
 	return resp.Sucesso, nil
+}
+
+// LimparReservasDaCarona exclui as reservas órfãs e notifica os passageiros
+func LimparReservasDaCarona(caronaID int, motorista string) {
+	MutexReservas.Lock()
+	defer MutexReservas.Unlock()
+
+	// Tenta carregar notificações antigas
+	_ = persistencia.CarregarJSON(ArquivoNotificacoes, &NotificacoesRegistradas)
+
+	var reservasRestantes []protocolo.ReservaDetalhada
+	for _, res := range ReservasRegistradas {
+		afetada := false
+		for _, tr := range res.Trechos {
+			if tr.CaronaID == caronaID {
+				afetada = true
+				break
+			}
+		}
+
+		if afetada {
+			// A reserva foi cancelada, cria notificação para o passageiro
+			msg := fmt.Sprintf("ATENCAO: Sua reserva #%d foi cancelada pelo sistema porque o motorista '%s' cancelou a carona.", res.ID, motorista)
+
+			novaNot := protocolo.Notificacao{
+				Passageiro: res.Passageiro,
+				Mensagem:   msg,
+				Data:       time.Now().Format("2006-01-02 15:04:05"),
+			}
+			NotificacoesRegistradas = append(NotificacoesRegistradas, novaNot)
+			fmt.Printf("[NOTIFICACAO] Aviso gerado para o passageiro '%s'\n", res.Passageiro)
+		} else {
+			reservasRestantes = append(reservasRestantes, res)
+		}
+	}
+
+	// Atualiza banco de dados
+	ReservasRegistradas = reservasRestantes
+	_ = persistencia.SalvarJSON(ArquivoReservas, ReservasRegistradas)
+	_ = persistencia.SalvarJSON(ArquivoNotificacoes, NotificacoesRegistradas)
+}
+
+// ProcessarConsultarNotificacoes busca avisos do passageiro e apaga (marca como lido)
+func ProcessarConsultarNotificacoes(conn net.Conn, dadosBrutos string) {
+	var req protocolo.ConsultarNotificacoesRequisicao
+	if err := json.Unmarshal([]byte(dadosBrutos), &req); err != nil {
+		return
+	}
+
+	MutexReservas.Lock()
+	defer MutexReservas.Unlock()
+	_ = persistencia.CarregarJSON(ArquivoNotificacoes, &NotificacoesRegistradas)
+
+	var minhas []protocolo.Notificacao
+	var restantes []protocolo.Notificacao
+
+	for _, n := range NotificacoesRegistradas {
+		if n.Passageiro == req.Passageiro {
+			minhas = append(minhas, n)
+		} else {
+			restantes = append(restantes, n)
+		}
+	}
+
+	if len(minhas) > 0 {
+		NotificacoesRegistradas = restantes
+		_ = persistencia.SalvarJSON(ArquivoNotificacoes, NotificacoesRegistradas)
+	}
+
+	resp := protocolo.ConsultarNotificacoesResposta{
+		Tipo:         protocolo.TipoConsultarNotificacoesRes,
+		Sucesso:      true,
+		Notificacoes: minhas,
+	}
+	_ = json.NewEncoder(conn).Encode(resp)
 }

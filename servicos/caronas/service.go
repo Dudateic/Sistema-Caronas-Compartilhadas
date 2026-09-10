@@ -25,6 +25,9 @@ var (
 
 const ArquivoCaronas = "caronas.json"
 
+// Callback executado sempre que uma carona é cancelada
+var AoCancelarCarona func(caronaID int, motorista string)
+
 // InicializarCaronas deve ser chamado no main do servidor
 func InicializarCaronas() error {
 	MutexCaronas.Lock()
@@ -191,6 +194,11 @@ func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 
 	// Remove a viagem da lista em memoria
 	CaronasRegistradas = append(CaronasRegistradas[:idx], CaronasRegistradas[idx+1:]...)
+
+	// Dispara o evento de cancelamento para quem estiver escutando (pacote reservas)
+	if AoCancelarCarona != nil {
+		AoCancelarCarona(req.CaronaID, req.Motorista)
+	}
 
 	// Persiste a remocao em disco no servidor
 	if err := persistencia.SalvarJSON(ArquivoCaronas, CaronasRegistradas); err != nil {

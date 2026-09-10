@@ -126,6 +126,7 @@ func menuPrincipalPassageiro(cliente *conexao.ClienteTCP, passageiro string) {
 		fmt.Println("1. Buscar Itinerarios e Reservar")
 		fmt.Println("2. Consultar Minhas Reservas")
 		fmt.Println("3. Cancelar Reserva")
+		fmt.Println("4. Ver Notificacoes de Cancelamento")
 		fmt.Println("0. Sair e Desconectar")
 		fmt.Println()
 
@@ -138,6 +139,8 @@ func menuPrincipalPassageiro(cliente *conexao.ClienteTCP, passageiro string) {
 			acaoConsultarReservas(cliente, passageiro)
 		case "3":
 			acaoCancelarReserva(cliente, passageiro)
+		case "4":
+			acaoConsultarNotificacoes(cliente, passageiro)
 		case "0":
 			fmt.Println("Desconectando do servidor... Ate logo!")
 			return
@@ -286,4 +289,33 @@ func acaoCancelarReserva(cliente *conexao.ClienteTCP, passageiro string) {
 	if sucesso {
 		fmt.Printf("[OK] Reserva #%d cancelada com sucesso e assentos liberados.\n", id)
 	}
+}
+
+func acaoConsultarNotificacoes(cliente *conexao.ClienteTCP, passageiro string) {
+	req := protocolo.ConsultarNotificacoesRequisicao{
+		Tipo:       protocolo.TipoConsultarNotificacoesReq,
+		Passageiro: passageiro,
+	}
+
+	if err := cliente.EnviarJSON(req); err != nil {
+		fmt.Printf("[ERRO] Falha ao enviar requisicao: %v\n", err)
+		return
+	}
+
+	var resp protocolo.ConsultarNotificacoesResposta
+	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
+		fmt.Printf("[ERRO] Falha ao ler resposta: %v\n", err)
+		return
+	}
+
+	fmt.Println("\n         CAIXA DE MENSAGENS         ")
+	if len(resp.Notificacoes) == 0 {
+		fmt.Println("Voce nao possui novas notificacoes.")
+		return
+	}
+
+	for _, n := range resp.Notificacoes {
+		fmt.Printf("-> [%s] %s\n", n.Data, n.Mensagem)
+	}
+	fmt.Println("\n(Avisos marcados como lidos e apagados da caixa)")
 }

@@ -16,6 +16,30 @@ const (
 	TipoCancelarReservaRes    = "cancelar_reserva_resposta"
 )
 
+// --- NOVAS MENSAGENS PARA NOTIFICAÇÕES ---
+
+const (
+	TipoConsultarNotificacoesReq = "consultar_notificacoes"
+	TipoConsultarNotificacoesRes = "consultar_notificacoes_resposta"
+)
+
+type Notificacao struct {
+	Passageiro string `json:"passageiro"`
+	Mensagem   string `json:"mensagem"`
+	Data       string `json:"data"`
+}
+
+type ConsultarNotificacoesRequisicao struct {
+	Tipo       string `json:"tipo"`
+	Passageiro string `json:"passageiro"`
+}
+
+type ConsultarNotificacoesResposta struct {
+	Tipo         string        `json:"tipo"`
+	Sucesso      bool          `json:"sucesso"`
+	Notificacoes []Notificacao `json:"notificacoes"`
+}
+
 /**
  * Representa um segmento de viagem associado a uma carona especifica.
  */

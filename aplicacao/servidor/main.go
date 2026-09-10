@@ -29,8 +29,12 @@ func main() {
 		fmt.Printf("[ERRO] Falha ao inicializar caronas: %v\n", err)
 		return
 	}
-	if err := reservas.InicializarReservas(); err != nil {
+	if err := reservas.InicializarReservas();
+	err != nil {
 		fmt.Printf("[ERRO] Falha ao inicializar reservas: %v\n", err)
+
+		// Conecta o evento de cancelamento da carona com a limpeza das reservas
+		caronas.AoCancelarCarona = reservas.LimparReservasDaCarona
 	}
 
 	endereco := conexao.EnderecoPadrao
@@ -154,6 +158,10 @@ func rotearRequisicao(conn net.Conn, tipo string, dadosBrutos string, remoto str
 
 	case protocolo.TipoCancelarReservaReq:
 		reservas.ProcessarCancelarReserva(conn, dadosBrutos)
+
+	// noti
+	case protocolo.TipoConsultarNotificacoesReq:
+		reservas.ProcessarConsultarNotificacoes(conn, dadosBrutos)
 
 	default:
 		fmt.Printf("[AVISO] Requisicao desconhecida recebida de %s: '%s'\n", remoto, tipo)
