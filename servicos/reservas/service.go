@@ -58,7 +58,7 @@ func ProcessarBuscarItinerarios(conn net.Conn, dadosBrutos string) {
 		return
 	}
 
-	caronas.MutexCaronas.Lock()
+	caronas.MutexCaronas.RLock()
 	var trechosGrafo []protocolo.TrechoItinerario
 	for _, c := range caronas.CaronasRegistradas {
 		if c.Data != req.Data {
@@ -77,7 +77,7 @@ func ProcessarBuscarItinerarios(conn net.Conn, dadosBrutos string) {
 			}
 		}
 	}
-	caronas.MutexCaronas.Unlock()
+	caronas.MutexCaronas.RUnlock()
 
 	var itinerariosEncontrados []protocolo.Itinerario
 	visitados := make(map[string]bool)

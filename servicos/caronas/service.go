@@ -20,7 +20,7 @@ import (
 var (
 	CaronasRegistradas []protocolo.CaronaDetalhada
 	ProximoCaronaID    = 1
-	MutexCaronas       sync.Mutex
+	MutexCaronas       sync.RWMutex
 )
 
 const ArquivoCaronas = "caronas.json"
@@ -140,8 +140,8 @@ func ProcessarConsultarCaronas(conn net.Conn, dadosBrutos string) {
 		return
 	}
 
-	MutexCaronas.Lock()
-	defer MutexCaronas.Unlock()
+	MutexCaronas.RLock()
+	defer MutexCaronas.RUnlock()
 
 	var minhas []protocolo.CaronaDetalhada
 	for _, c := range CaronasRegistradas {
@@ -197,7 +197,7 @@ func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 
 	// Dispara o evento de cancelamento para quem estiver escutando (pacote reservas)
 	if AoCancelarCarona != nil {
-		AoCancelarCarona(req.CaronaID, req.Motorista)
+		go AoCancelarCarona(req.CaronaID, req.Motorista)
 	}
 
 	// Persiste a remocao em disco no servidor
