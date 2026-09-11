@@ -58,22 +58,25 @@ func ProcessarBuscarItinerarios(conn net.Conn, dadosBrutos string) {
 		return
 	}
 
+	grafoAdjacenciaTrechos := make(map[string][]protocolo.TrechoItinerario)
+
 	caronas.MutexCaronas.RLock()
-	var trechosGrafo []protocolo.TrechoItinerario
 	for _, c := range caronas.CaronasRegistradas {
 		if c.Data != req.Data {
 			continue
 		}
 		for _, t := range c.Trechos {
 			if t.AssentosLivres > 0 {
-				trechosGrafo = append(trechosGrafo, protocolo.TrechoItinerario{
+				novoTrecho := protocolo.TrechoItinerario{
 					CaronaID:  c.ID,
 					Motorista: c.Motorista,
 					Origem:    t.Origem,
 					Destino:   t.Destino,
 					Horario:   c.Horario,
 					Preco:     t.Preco,
-				})
+				}
+				// Adiciona o trecho diretamente na lista daquela cidade
+				grafoAdjacenciaTrechos[t.Origem] = append(grafoAdjacenciaTrechos[t.Origem], novoTrecho)
 			}
 		}
 	}
@@ -86,7 +89,7 @@ func ProcessarBuscarItinerarios(conn net.Conn, dadosBrutos string) {
 		req.Origem,
 		req.Destino,
 		req.Data,
-		trechosGrafo,
+		grafoAdjacenciaTrechos,
 		visitados,
 		[]protocolo.TrechoItinerario{},
 		0.0,
@@ -109,7 +112,7 @@ func buscarDFS(
 	atual string,
 	destino string,
 	data string,
-	grafo []protocolo.TrechoItinerario,
+	grafo map[string][]protocolo.TrechoItinerario,
 	visitados map[string]bool,
 	caminho []protocolo.TrechoItinerario,
 	custo float64,
@@ -129,9 +132,9 @@ func buscarDFS(
 
 	visitados[atual] = true
 
-	for _, tr := range grafo {
-		// Validacao espacial e temporal simples (horario da conexao deve ser >= ao trecho anterior se houver)
-		if tr.Origem == atual && !visitados[tr.Destino] {
+	for _, tr := range grafo[atual] {
+		if !visitados[tr.Destino] {
+			// Validacao espacial e temporal simples (horario da conexao deve ser >= ao trecho anterior se houver)
 			if len(caminho) > 0 {
 				ultimoTrecho := caminho[len(caminho)-1]
 				// Se for mesma carona ou horario posterior/igual
