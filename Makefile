@@ -14,8 +14,8 @@ help:
 	@echo "  make run-servidor      - Inicia o servidor"
 	@echo "  make run-motorista     - Inicia o cliente do Motorista"
 	@echo "  make run-passageiro    - Inicia o cliente do Passageiro"
+	@echo "  make run-testes        - Roda todos os testes do projeto"
 	@echo "  make build             - Compila todos os aplicativos "
-	@echo "  make test              - Roda todos os testes do projeto"
 	@echo "  make clean             - Remove os binários compilados"
 	@echo "  make clear-data        - APAGA o banco de dados"
 	@echo "  make docker-up         - Sobe o ambiente usando Docker"
@@ -52,7 +52,7 @@ build-passageiro:
 	go build -o $(BUILD_DIR)/passageiro $(PASSENGER_APP)
 
 # Testes e Limpeza
-test:
+run-testes:
 	@echo "=> Executando testes..."
 	go test -v ./tests/...
 
