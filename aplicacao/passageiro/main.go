@@ -137,7 +137,12 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
  * Menu principal interativo do passageiro.
  */
 func menuPrincipalPassageiro(cliente *conexao.ClienteTCP, passageiro string) {
+	// Checa as notificações assim que loga
+	fmt.Println("\nVerificando caixa de mensagens...")
+	acaoConsultarNotificacoes(cliente, passageiro)
+
 	for {
+		LimparTela()
 		fmt.Println()
 		fmt.Printf("        PAINEL DO PASSAGEIRO: %s        \n", passageiro)
 		fmt.Println("1. Buscar Itinerarios e Reservar")
@@ -316,12 +321,14 @@ func acaoConsultarNotificacoes(cliente *conexao.ClienteTCP, passageiro string) {
 
 	if err := cliente.EnviarJSON(req); err != nil {
 		fmt.Printf("[ERRO] Falha ao enviar requisicao: %v\n", err)
+		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
 	var resp protocolo.ConsultarNotificacoesResposta
 	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
 		fmt.Printf("[ERRO] Falha ao ler resposta: %v\n", err)
+		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
@@ -332,7 +339,9 @@ func acaoConsultarNotificacoes(cliente *conexao.ClienteTCP, passageiro string) {
 	}
 
 	for _, n := range resp.Notificacoes {
-		fmt.Printf("-> [%s] %s\n", n.Data, n.Mensagem)
+		fmt.Printf("\n[Recebido em: %s]\n-> %s\n", n.Data, n.Mensagem)
 	}
+
 	fmt.Println("\n(Avisos marcados como lidos e apagados da caixa)")
+	lerEntrada("\nPressione ENTER para ir para o Menu Principal...")
 }

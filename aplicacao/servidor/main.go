@@ -24,22 +24,21 @@ func main() {
 	fmt.Println("         VAIJUNTO   SERVIDOR                ")
 	fmt.Println()
 
-	// 1. Inicializa os dados persistidos do servidor
+	// Inicializa os dados persistidos do servidor
 	if err := caronas.InicializarCaronas(); err != nil {
 		fmt.Printf("[ERRO] Falha ao inicializar caronas: %v\n", err)
 		return
 	}
-	if err := reservas.InicializarReservas();
-	err != nil {
+	if err := reservas.InicializarReservas(); err != nil {
 		fmt.Printf("[ERRO] Falha ao inicializar reservas: %v\n", err)
-
-		// Conecta o evento de cancelamento da carona com a limpeza das reservas
-		caronas.AoCancelarCarona = reservas.LimparReservasDaCarona
+		return
 	}
+
+	caronas.AoCancelarCarona = reservas.LimparReservasDaCarona
 
 	endereco := conexao.EnderecoPadrao
 	if len(os.Args) > 1 {
-		endereco = os.Args[1] // Ex: go run cmd/servidor/main.go :9000
+		endereco = os.Args[1]
 	}
 
 	listener, err := net.Listen("tcp", endereco)
@@ -53,7 +52,7 @@ func main() {
 	fmt.Println("Pressione Ctrl+C para encerrar o servico")
 	fmt.Println()
 
-	// Captura interrupcoes do sistema para encerramento gracioso
+	// Captura interrupcoes do sistema para encerramento
 	sinais := make(chan os.Signal, 1)
 	signal.Notify(sinais, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -67,7 +66,7 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			// Se o listener foi fechado intencionalmente, encerra silenciosamente
+			// Se o listener foi fechado intencionalmente, encerra
 			if errors.Is(err, net.ErrClosed) {
 				break
 			}
@@ -159,7 +158,7 @@ func rotearRequisicao(conn net.Conn, tipo string, dadosBrutos string, remoto str
 	case protocolo.TipoCancelarReservaReq:
 		reservas.ProcessarCancelarReserva(conn, dadosBrutos)
 
-	// noti
+	// notificações
 	case protocolo.TipoConsultarNotificacoesReq:
 		reservas.ProcessarConsultarNotificacoes(conn, dadosBrutos)
 
