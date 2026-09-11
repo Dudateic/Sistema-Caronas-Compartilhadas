@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +25,20 @@ func lerEntrada(rotulo string) string {
 		return strings.TrimSpace(scanner.Text())
 	}
 	return ""
+}
+
+/**
+ * Identifica o sistema operacional e limpa o terminal.
+ */
+func LimparTela() {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+	cmd.Stdout = os.Stdout
+	_ = cmd.Run()
 }
 
 func main() {
@@ -119,6 +135,7 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
  */
 func menuPrincipalMotorista(cliente *conexao.ClienteTCP, motorista string) {
 	for {
+		LimparTela()
 		fmt.Printf("\n             PAINEL DO MOTORISTA: %s                 \n", motorista)
 		fmt.Println("1. Publicar Nova Carona")
 		fmt.Println("2. Consultar Minhas Caronas")

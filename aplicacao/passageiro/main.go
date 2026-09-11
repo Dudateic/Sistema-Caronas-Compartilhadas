@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +26,22 @@ func lerEntrada(rotulo string) string {
 	return ""
 }
 
+/**
+ * Identifica o sistema operacional e limpa o terminal.
+ */
+func LimparTela() {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+	cmd.Stdout = os.Stdout
+	_ = cmd.Run()
+}
+
 func main() {
+	LimparTela()
 	fmt.Println()
 	fmt.Println("         VAIJUNTO   MODULO DO PASSAGEIRO          ")
 	fmt.Println()
