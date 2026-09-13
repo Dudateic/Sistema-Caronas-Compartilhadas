@@ -1,0 +1,35 @@
+services:
+  servidor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vaijunto_servidor
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./dados:/app/dados
+    restart: unless-stopped
+
+  motorista:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vaijunto_motorista
+    entrypoint: ["motorista"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      - servidor
+    profiles: ["clientes"]
+
+  passageiro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vaijunto_passageiro
+    entrypoint: ["passageiro"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      - servidor
+    profiles: ["clientes"]
