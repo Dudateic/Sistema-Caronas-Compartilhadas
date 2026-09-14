@@ -12,6 +12,7 @@ import (
 
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/visual"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/reservas"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/usuarios"
 )
@@ -41,10 +42,7 @@ func LimparTela() {
 }
 
 func main() {
-	LimparTela()
-	fmt.Println()
-	fmt.Println("         VAIJUNTO   MODULO DO PASSAGEIRO          ")
-	fmt.Println()
+	visual.ExibirCabecalho("VAIJUNTO - MODULO DO PASSAGEIRO")
 
 	endereco := lerEntrada(fmt.Sprintf("Endereco do servidor TCP (Enter para %s): ", conexao.EnderecoPadrao))
 	if endereco == "" {
@@ -54,20 +52,19 @@ func main() {
 	fmt.Printf("Conectando ao servidor em %s...\n", endereco)
 	cliente, err := conexao.ConectarTCP(endereco, 5*time.Second)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao conectar: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao conectar: %v", err))
 		return
 	}
 	defer cliente.Fechar()
-	fmt.Println("Conexao estabelecida com sucesso!")
+	visual.MensagemSucesso("Conexao estabelecida com sucesso!")
+	time.Sleep(1 * time.Second)
 
-	// 1. Fluxo de Autenticacao
 	passageiroLogado := telaAcesso(cliente)
 	if passageiroLogado == "" {
 		fmt.Println("Operacao encerrada pelo usuario. Ate logo!")
 		return
 	}
 
-	// 2. Menu Principal de Operacoes do Passageiro
 	menuPrincipalPassageiro(cliente, passageiroLogado)
 }
 
@@ -76,8 +73,8 @@ func main() {
  */
 func telaAcesso(cliente *conexao.ClienteTCP) string {
 	for {
-		fmt.Println()
-		fmt.Println("                   AUTENTICACAO                   ")
+		LimparTela()
+		visual.ExibirCabecalho("AUTENTICACAO")
 		fmt.Println("1. Entrar (Login)")
 		fmt.Println("2. Criar Nova Conta (Cadastro)")
 		fmt.Println("0. Encerrar")
@@ -91,18 +88,23 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
 			senha := lerEntrada("Senha: ")
 
 			if usuario == "" || senha == "" {
-				fmt.Println("[AVISO] Usuario e senha nao podem ser vazios.")
+				visual.MensagemAviso("Usuario e senha nao podem ser vazios.")
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 
 			fmt.Println("Validando credenciais...")
 			sucesso, err := usuarios.AutenticarCliente(cliente, usuario, senha, protocolo.PerfilPassageiro)
 			if err != nil {
-				fmt.Printf("[ERRO] Falha na comunicacao com servidor: %v\n", err)
+				visual.MensagemErro(fmt.Sprintf("Falha na comunicacao com servidor: %v", err))
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 			if sucesso {
 				return usuario
+			} else {
+				visual.MensagemAviso("Credenciais invalidas.")
+				lerEntrada("\nPressione ENTER para continuar...")
 			}
 
 		case "2":
@@ -110,25 +112,29 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
 			senha := lerEntrada("Defina sua senha: ")
 
 			if usuario == "" || senha == "" {
-				fmt.Println("[AVISO] Preencha usuario e senha para se cadastrar.")
+				visual.MensagemAviso("Preencha usuario e senha para se cadastrar.")
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 
 			fmt.Println("Enviando solicitacao de cadastro...")
 			sucesso, err := usuarios.CadastrarCliente(cliente, usuario, senha, protocolo.PerfilPassageiro)
 			if err != nil {
-				fmt.Printf("[ERRO] Falha ao registrar usuario: %v\n", err)
+				visual.MensagemErro(fmt.Sprintf("Falha ao registrar usuario: %v", err))
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 			if sucesso {
-				fmt.Println("[SUCESSO] Conta de passageiro criada! Faca login na opcao 1.")
+				visual.MensagemSucesso("Conta de passageiro criada! Faca login na opcao 1.")
+				lerEntrada("\nPressione ENTER para continuar...")
 			}
 
 		case "0":
 			return ""
 
 		default:
-			fmt.Println("[AVISO] Opcao invalida, tente novamente.")
+			visual.MensagemAviso("Opcao invalida, tente novamente.")
+			lerEntrada("\nPressione ENTER para continuar...")
 		}
 	}
 }
@@ -138,13 +144,13 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
  */
 func menuPrincipalPassageiro(cliente *conexao.ClienteTCP, passageiro string) {
 	// Checa as notificações assim que loga
+	LimparTela()
 	fmt.Println("\nVerificando caixa de mensagens...")
-	acaoConsultarNotificacoes(cliente, passageiro)
+	acaoConsultarNotificacoesSilenciosa(cliente, passageiro)
 
 	for {
 		LimparTela()
-		fmt.Println()
-		fmt.Printf("        PAINEL DO PASSAGEIRO: %s        \n", passageiro)
+		visual.ExibirCabecalho(fmt.Sprintf("PAINEL DO PASSAGEIRO: %s", passageiro))
 		fmt.Println("1. Buscar Itinerarios e Reservar")
 		fmt.Println("2. Consultar Minhas Reservas")
 		fmt.Println("3. Cancelar Reserva")
@@ -167,46 +173,65 @@ func menuPrincipalPassageiro(cliente *conexao.ClienteTCP, passageiro string) {
 			fmt.Println("Desconectando do servidor... Ate logo!")
 			return
 		default:
-			fmt.Println("[AVISO] Opcao invalida. Digite um numero entre 0 e 3.")
+			visual.MensagemAviso("Opcao invalida. Digite um numero entre 0 e 4.")
+			lerEntrada("\nPressione ENTER para continuar...")
 		}
 	}
 }
 
 /**
- * Busca caminhos (DFS) e permite reservar uma das opcoes encontradas.
+ * Busca caminhos (DFS) e permite reservar uma das opcoes encontradas
  */
 func acaoBuscarEReservar(cliente *conexao.ClienteTCP, passageiro string) {
-	fmt.Println()
-	fmt.Println("         BUSCAR ITINERARIOS         ")
+	LimparTela()
+	visual.ExibirCabecalho("BUSCAR ITINERARIOS")
+
 	origem := lerEntrada("Cidade de partida (Origem): ")
 	destino := lerEntrada("Cidade de chegada (Destino): ")
 	data := lerEntrada("Data da viagem (AAAA-MM-DD): ")
 
 	if origem == "" || destino == "" || data == "" {
-		fmt.Println("[ERRO] Origem, destino e data sao campos obrigatorios.")
+		visual.MensagemErro("Origem, destino e data sao campos obrigatorios.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	fmt.Println("\nBuscando rotas disponiveis no servidor...")
 	itinerarios, err := reservas.BuscarItinerarios(cliente, origem, destino, data)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha na busca: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha na busca: %v", err))
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
-	fmt.Println("\n               ITINERARIOS ENCONTRADOS                ")
-	for i, it := range itinerarios {
-		fmt.Printf("\nOpcao [%d] - Preco Total: R$ %.2f\n", i+1, it.PrecoTotal)
-		for _, t := range it.Trechos {
-			fmt.Printf("   Trecho: %s -> %s | Horario: %s | Motorista: %s | R$ %.2f\n",
-				t.Origem, t.Destino, t.Horario, t.Motorista, t.Preco)
-		}
+	if len(itinerarios) == 0 {
+		visual.MensagemAviso("Nenhum itinerario disponivel para essa rota e data.")
+		lerEntrada("\nPressione ENTER para voltar...")
+		return
 	}
+
+	LimparTela()
+	visual.ExibirCabecalho("ITINERARIOS ENCONTRADOS")
+
+	for i, it := range itinerarios {
+		fmt.Printf("\n[Opcao %d] - Preco Total: R$ %.2f\n", i+1, it.PrecoTotal)
+		trechoCols := []string{"Origem -> Destino", "Horario", "Motorista", "Preco"}
+		trechoLarguras := []int{30, 8, 15, 10}
+		visual.TabelaCabecalho(trechoCols, trechoLarguras)
+		for _, t := range it.Trechos {
+			rotaStr := fmt.Sprintf("%s -> %s", t.Origem, t.Destino)
+			precoStr := fmt.Sprintf("R$ %.2f", t.Preco)
+			visual.TabelaLinha([]string{rotaStr, t.Horario, t.Motorista, precoStr}, trechoLarguras)
+		}
+		visual.TabelaRodape(trechoLarguras)
+	}
+
 	fmt.Println()
 	escolhaStr := lerEntrada("Deseja reservar alguma dessas opcoes? Digite o numero da opcao (ou 0 para cancelar): ")
 	escolha, err := strconv.Atoi(escolhaStr)
 	if err != nil || escolha <= 0 || escolha > len(itinerarios) {
 		fmt.Println("Nenhuma reserva efetuada.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
@@ -215,139 +240,212 @@ func acaoBuscarEReservar(cliente *conexao.ClienteTCP, passageiro string) {
 
 	sucesso, idReserva, err := reservas.ReservarItinerario(cliente, passageiro, itinerarioEscolhido)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao processar reserva: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao processar reserva: %v", err))
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	if sucesso {
-		fmt.Printf("[SUCESSO] Reserva confirmada! Codigo da Reserva: #%d\n", idReserva)
+		visual.MensagemSucesso(fmt.Sprintf("Reserva confirmada! Codigo da Reserva: #%d", idReserva))
+		lerEntrada("\nPressione ENTER para voltar ao menu...")
 	} else {
-		fmt.Println("[AVISO] Nao foi possivel concluir a reserva (vagas esgotadas em um dos trechos).")
+		visual.MensagemAviso("Nao foi possivel concluir a reserva (vagas esgotadas em um dos trechos).")
+		lerEntrada("\nPressione ENTER para voltar ao menu...")
 	}
 }
 
 /**
- * Exibe todas as reservas ativas associadas ao passageiro logado.
+ * Exibe todas as reservas ativas associadas ao passageiro logado em formato tabular.
  */
 func acaoConsultarReservas(cliente *conexao.ClienteTCP, passageiro string) {
-    fmt.Println()
-    fmt.Println("Consultando suas reservas ativas...")
+	LimparTela()
+	visual.ExibirCabecalho("SUAS RESERVAS ATIVAS")
 
-    listaReservas, err := reservas.ConsultarMinhasReservas(cliente, passageiro)
-    if err != nil {
-        fmt.Printf("[ERRO] Falha ao consultar reservas: %v\n", err)
-        lerEntrada("\nPressione ENTER para continuar...") // Pausa para ver o erro
-        return
-    }
+	listaReservas, err := reservas.ConsultarMinhasReservas(cliente, passageiro)
+	if err != nil {
+		visual.MensagemErro(fmt.Sprintf("Falha ao consultar reservas: %v", err))
+		lerEntrada("\nPressione ENTER para continuar...")
+		return
+	}
 
-    if len(listaReservas) == 0 {
-        fmt.Println("Voce nao possui nenhuma reserva ativa.")
-        lerEntrada("\nPressione ENTER para continuar...") // Pausa para ler a mensagem
-        return
-    }
+	if len(listaReservas) == 0 {
+		visual.MensagemAviso("Voce nao possui nenhuma reserva ativa.")
+		lerEntrada("\nPressione ENTER para continuar...")
+		return
+	}
 
-    // Loop para listar os trechos na tela
-    fmt.Println("\n               SUAS RESERVAS                ")
-    for _, r := range listaReservas {
-        fmt.Printf("\n[Reserva #%d] Data: %s | Preco Total: R$ %.2f\n", r.ID, r.Data, r.PrecoTotal)
-        fmt.Println("Trechos reservados:")
-        for _, t := range r.Trechos {
-            fmt.Printf("  - %s -> %s | Horario: %s | Motorista: %s | R$ %.2f\n",
-                t.Origem, t.Destino, t.Horario, t.Motorista, t.Preco)
-        }
-    }
+	// Tabela Geral de Reservas
+	colunasCabecalho := []string{"ID", "Data da Viagem", "Preco Total"}
+	largurasColunas := []int{6, 20, 15}
 
-    // Linha essencial adicionada para pausar e permitir a leitura antes de limpar a tela
-    lerEntrada("\nPressione ENTER para voltar ao menu...")
+	visual.TabelaCabecalho(colunasCabecalho, largurasColunas)
+	for _, r := range listaReservas {
+		visual.TabelaLinha([]string{
+			strconv.Itoa(r.ID),
+			r.Data,
+			fmt.Sprintf("R$ %.2f", r.PrecoTotal),
+		}, largurasColunas)
+	}
+	visual.TabelaRodape(largurasColunas)
+
+	// Detalhes dos trechos de cada reserva
+	fmt.Println()
+	visual.LinhaDivisoria()
+	fmt.Println("DETALHES DOS TRECHOS RESERVADOS:")
+	for _, r := range listaReservas {
+		fmt.Printf("\n[Reserva #%d]\n", r.ID)
+		if len(r.Trechos) > 0 {
+			trechoCols := []string{"Trecho (Origem -> Destino)", "Horario", "Motorista", "Preco"}
+			trechoLarguras := []int{30, 8, 15, 10}
+			visual.TabelaCabecalho(trechoCols, trechoLarguras)
+			for _, t := range r.Trechos {
+				trechoStr := fmt.Sprintf("%s -> %s", t.Origem, t.Destino)
+				precoStr := fmt.Sprintf("R$ %.2f", t.Preco)
+				visual.TabelaLinha([]string{trechoStr, t.Horario, t.Motorista, precoStr}, trechoLarguras)
+			}
+			visual.TabelaRodape(trechoLarguras)
+		}
+	}
+
+	lerEntrada("\nPressione ENTER para voltar ao menu...")
 }
-
 
 /**
  * Solicita o cancelamento de um bilhete de reserva e a liberacao dos assentos.
  */
 func acaoCancelarReserva(cliente *conexao.ClienteTCP, passageiro string) {
-	fmt.Println()
-	fmt.Println("         CANCELAR RESERVA         ")
+	LimparTela()
+	visual.ExibirCabecalho("CANCELAR RESERVA")
 
-	// Busca as reservas do passageiro
 	listaReservas, err := reservas.ConsultarMinhasReservas(cliente, passageiro)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao consultar reservas: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao consultar reservas: %v", err))
+		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
 	if len(listaReservas) == 0 {
-		fmt.Println("Voce nao possui nenhuma reserva para cancelar.")
+		visual.MensagemAviso("Voce nao possui nenhuma reserva para cancelar.")
+		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
-	// Lista as reservas na tela mostrando o ID em destaque
-	fmt.Println("\nSuas Reservas Ativas:")
+	// Tabela para seleção do ID de cancelamento
+	colunasCabecalho := []string{"ID", "Data", "Rota", "Preco Total"}
+	largurasColunas := []int{4, 12, 25, 12}
+	visual.TabelaCabecalho(colunasCabecalho, largurasColunas)
 	for _, r := range listaReservas {
 		origem := r.Trechos[0].Origem
 		destino := r.Trechos[len(r.Trechos)-1].Destino
-		fmt.Printf(" -> [ID: %d] Data: %s | %s -> %s | R$ %.2f\n",
-			r.ID, r.Data, origem, destino, r.PrecoTotal)
+		rotaStr := fmt.Sprintf("%s -> %s", origem, destino)
+		visual.TabelaLinha([]string{
+			strconv.Itoa(r.ID),
+			r.Data,
+			rotaStr,
+			fmt.Sprintf("R$ %.2f", r.PrecoTotal),
+		}, largurasColunas)
 	}
+	visual.TabelaRodape(largurasColunas)
+	fmt.Println()
 
 	idStr := lerEntrada("Informe o ID da reserva que deseja cancelar (ou 0 para voltar): ")
 	id, err := strconv.Atoi(idStr)
 
 	if err != nil || id < 0 {
-		fmt.Println("[ERRO] ID invalido.")
+		visual.MensagemErro("ID invalido.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 	if id == 0 {
 		fmt.Println("Cancelamento abortado.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	confirmacao := lerEntrada(fmt.Sprintf("Tem certeza que deseja cancelar a reserva #%d? (s/N): ", id))
 	if strings.ToLower(confirmacao) != "s" {
 		fmt.Println("Cancelamento abortado.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	sucesso, err := reservas.CancelarMinhaReserva(cliente, id, passageiro)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao comunicar cancelamento: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao comunicar cancelamento: %v", err))
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	if sucesso {
-		fmt.Printf("[OK] Reserva #%d cancelada com sucesso e assentos liberados.\n", id)
+		visual.MensagemSucesso(fmt.Sprintf("Reserva #%d cancelada com sucesso e assentos liberados.", id))
+		lerEntrada("\nPressione ENTER para voltar ao menu...")
 	}
 }
 
+/**
+ * Consulta notificações e pausa para leitura.
+ */
 func acaoConsultarNotificacoes(cliente *conexao.ClienteTCP, passageiro string) {
+	LimparTela()
+	visual.ExibirCabecalho("CAIXA DE MENSAGENS")
+
 	req := protocolo.ConsultarNotificacoesRequisicao{
 		Tipo:       protocolo.TipoConsultarNotificacoesReq,
 		Passageiro: passageiro,
 	}
 
 	if err := cliente.EnviarJSON(req); err != nil {
-		fmt.Printf("[ERRO] Falha ao enviar requisicao: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao enviar requisicao: %v", err))
 		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
 	var resp protocolo.ConsultarNotificacoesResposta
 	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
-		fmt.Printf("[ERRO] Falha ao ler resposta: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao ler resposta: %v", err))
 		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
-	fmt.Println("\n         CAIXA DE MENSAGENS         ")
 	if len(resp.Notificacoes) == 0 {
-		fmt.Println("Voce nao possui novas notificacoes.")
+		visual.MensagemAviso("Voce nao possui novas notificacoes.")
+		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
 	for _, n := range resp.Notificacoes {
 		fmt.Printf("\n[Recebido em: %s]\n-> %s\n", n.Data, n.Mensagem)
+		visual.LinhaDivisoria()
 	}
 
 	fmt.Println("\n(Avisos marcados como lidos e apagados da caixa)")
-	lerEntrada("\nPressione ENTER para ir para o Menu Principal...")
+	lerEntrada("\nPressione ENTER para voltar ao menu...")
+}
+
+/**
+ * Consulta notificações no login
+ */
+func acaoConsultarNotificacoesSilenciosa(cliente *conexao.ClienteTCP, passageiro string) {
+	req := protocolo.ConsultarNotificacoesRequisicao{
+		Tipo:       protocolo.TipoConsultarNotificacoesReq,
+		Passageiro: passageiro,
+	}
+
+	if err := cliente.EnviarJSON(req); err != nil {
+		return
+	}
+
+	var resp protocolo.ConsultarNotificacoesResposta
+	if err := cliente.LerEDecodificarJSON(&resp); err != nil {
+		return
+	}
+
+	if len(resp.Notificacoes) > 0 {
+		visual.ExibirCabecalho("NOVAS NOTIFICACOES")
+		for _, n := range resp.Notificacoes {
+			fmt.Printf("\n[Recebido em: %s]\n-> %s\n", n.Data, n.Mensagem)
+		}
+		visual.LinhaDivisoria()
+		lerEntrada("\nPressione ENTER para ir para o Painel Principal...")
+	}
 }
