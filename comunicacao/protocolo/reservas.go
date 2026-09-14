@@ -16,8 +16,6 @@ const (
 	TipoCancelarReservaRes    = "cancelar_reserva_resposta"
 )
 
-// --- NOVAS MENSAGENS PARA NOTIFICAÇÕES ---
-
 const (
 	TipoConsultarNotificacoesReq = "consultar_notificacoes"
 	TipoConsultarNotificacoesRes = "consultar_notificacoes_resposta"

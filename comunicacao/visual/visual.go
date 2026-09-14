@@ -43,17 +43,17 @@ func ExibirCabecalho(titulo string) {
 
 // MensagemSucesso padroniza avisos de sucesso
 func MensagemSucesso(msg string) {
-	fmt.Println(Verde + Negrito + " [SUCESSO] " + Reset + TextoBranco + msg + Reset)
+	fmt.Println(Verde + Negrito + "[SUCESSO] " + Reset + TextoBranco + msg + Reset)
 }
 
 // MensagemErro padroniza avisos de erro
 func MensagemErro(msg string) {
-	fmt.Println(Vermelho + Negrito + " ✖ [ERRO] " + Reset + TextoBranco + msg + Reset)
+	fmt.Println(Vermelho + Negrito + "[ERRO] " + Reset + TextoBranco + msg + Reset)
 }
 
 // MensagemAviso padroniza alertas
 func MensagemAviso(msg string) {
-	fmt.Println(Amarelo + Negrito + " ⚠ [AVISO] " + Reset + TextoBranco + msg + Reset)
+	fmt.Println(Amarelo + Negrito + "[AVISO] " + Reset + TextoBranco + msg + Reset)
 }
 
 // LinhaDivisoria imprime uma linha pontilhada
