@@ -5,12 +5,12 @@ PASSENGER_APP = aplicacao/passageiro/main.go
 
 # Configuração do Go local do projeto
 PROJECT_ROOT = $(CURDIR)
-GO_ROOT = $(PROJECT_ROOT)/.local/go1.26
+GO_ROOT = $(PROJECT_ROOT)/.local/go
 GO = $(GO_ROOT)/bin/go
 GO_ENV = GOROOT=$(GO_ROOT) PATH=$(GO_ROOT)/bin:$(PATH) GOTOOLCHAIN=local
 
 
-.PHONY: all help build build-servidor build-motorista build-passageiro run-servidor run-motorista run-passageiro run-testes test clean clear-data docker-up docker-down
+.PHONY: all help build build-servidor build-motorista build-passageiro run-servidor run-motorista run-passageiro run-testes test clean clean-data up down
 
 all: help
 
@@ -24,9 +24,9 @@ help:
 	@echo "  make run-testes        - Roda todos os testes do projeto"
 	@echo "  make build             - Compila todos os aplicativos "
 	@echo "  make clean             - Remove os binários compilados"
-	@echo "  make clear-data        - APAGA o banco de dados"
-	@echo "  make up         - Sobe o ambiente usando Docker"
-	@echo "  make down       - Derruba o ambiente Docker"
+	@echo "  make clean-data        - APAGA o banco de dados"
+	@echo "  make up                - Sobe o ambiente usando Docker"
+	@echo "  make down              - Derruba o ambiente Docker"
 	@echo
 
 
@@ -71,7 +71,7 @@ clean:
 	@echo "=> Removendo binários..."
 	rm -rf $(BUILD_DIR)
 
-clear-data:
+clean-data:
 	@echo "=> Limpando arquivos de dados JSON e Logs..."
 	rm -f dados/*.json dados/*.log
 

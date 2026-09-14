@@ -164,5 +164,6 @@ func rotearRequisicao(conn net.Conn, tipo string, dadosBrutos string, remoto str
 
 	default:
 		fmt.Printf("[AVISO] Requisicao desconhecida recebida de %s: '%s'\n", remoto, tipo)
+
 	}
 }

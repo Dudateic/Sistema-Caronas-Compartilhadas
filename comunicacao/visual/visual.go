@@ -6,90 +6,130 @@ import (
 )
 
 const (
-	Reset    = "\033[0m"
-	Negrito  = "\033[1m"
-	Vermelho = "\033[31m"
-	Verde    = "\033[32m"
-	Amarelo  = "\033[33m"
-	Azul     = "\033[34m"
-	Ciano    = "\033[36m"
-	Cinza    = "\033[90m"
+	Reset       = "\033[0m"
+	Negrito     = "\033[1m"
+	Vermelho    = "\033[38;5;203m"
+	Verde       = "\033[38;5;48m"
+	Amarelo     = "\033[38;5;221m"
+	VerdeSuave  = "\033[38;5;114m"
+	CinzaClaro  = "\033[38;5;250m"
+	CinzaBorda  = "\033[38;5;240m"
+	TextoBranco = "\033[38;5;253m"
 )
 
-// ExibirCabecalho padroniza a exibição de títulos de telas
+// ExibirCabecalho exibe um banner com cantos arredondados
 func ExibirCabecalho(titulo string) {
 	fmt.Println()
-	fmt.Println(Ciano + Negrito + "==================================================" + Reset)
-	espacos := (50 - len(titulo)) / 2
-	if espacos < 0 {
-		espacos = 0
+	runasTitulo := []rune(strings.ToUpper(titulo))
+	tamanhoTitulo := len(runasTitulo)
+
+	larguraCaixa := tamanhoTitulo + 8
+	if larguraCaixa < 52 {
+		larguraCaixa = 52
 	}
-	padding := strings.Repeat(" ", espacos)
-	fmt.Println(Ciano + Negrito + padding + strings.ToUpper(titulo) + Reset)
-	fmt.Println(Ciano + Negrito + "==================================================" + Reset)
+
+	bordaTopo := "╭" + strings.Repeat("─", larguraCaixa) + "╮"
+	fmt.Println(CinzaClaro + Negrito + bordaTopo + Reset)
+
+	espacosEsq := (larguraCaixa - tamanhoTitulo) / 2
+	espacosDir := larguraCaixa - tamanhoTitulo - espacosEsq
+	linhaTexto := "│" + strings.Repeat(" ", espacosEsq) + string(runasTitulo) + strings.Repeat(" ", espacosDir) + "│"
+	fmt.Println(CinzaClaro + Negrito + linhaTexto + Reset)
+
+	bordaBaixo := "╰" + strings.Repeat("─", larguraCaixa) + "╯"
+	fmt.Println(CinzaClaro + Negrito + bordaBaixo + Reset)
 	fmt.Println()
 }
 
 // MensagemSucesso padroniza avisos de sucesso
 func MensagemSucesso(msg string) {
-	fmt.Println(Verde + "[SUCESSO] " + msg + Reset)
+	fmt.Println(Verde + Negrito + " [SUCESSO] " + Reset + TextoBranco + msg + Reset)
 }
 
 // MensagemErro padroniza avisos de erro
 func MensagemErro(msg string) {
-	fmt.Println(Vermelho + "[ERRO] " + msg + Reset)
+	fmt.Println(Vermelho + Negrito + " ✖ [ERRO] " + Reset + TextoBranco + msg + Reset)
 }
 
 // MensagemAviso padroniza alertas
 func MensagemAviso(msg string) {
-	fmt.Println(Amarelo + "[AVISO] " + msg + Reset)
+	fmt.Println(Amarelo + Negrito + " ⚠ [AVISO] " + Reset + TextoBranco + msg + Reset)
 }
 
-// LinhaDivisoria imprime uma linha simples para separar blocos
+// LinhaDivisoria imprime uma linha pontilhada
 func LinhaDivisoria() {
-	fmt.Println(Cinza + "--------------------------------------------------" + Reset)
+	fmt.Println(CinzaBorda + "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄" + Reset)
 }
 
-// TabelaCabecalho exibe o cabeçalho de uma tabela formatada com colunas alinhadas
+// TabelaCabecalho exibe o cabeçalho da tabela
 func TabelaCabecalho(colunas []string, larguras []int) {
-	linhaBorda(larguras)
+	linhaBordaEstilo(larguras, "top")
 	var sb strings.Builder
-	sb.WriteString("|")
+	sb.WriteString(CinzaBorda + "│" + Reset)
 	for i, col := range colunas {
-		formato := fmt.Sprintf(" %%-%ds |", larguras[i])
-		sb.WriteString(fmt.Sprintf(formato, col))
+		colTruncada := truncarTexto(col, larguras[i])
+		formato := fmt.Sprintf(" %s%%-%ds%s %s│%s", VerdeSuave+Negrito, larguras[i], Reset, CinzaBorda, Reset)
+		sb.WriteString(fmt.Sprintf(formato, colTruncada))
 	}
-	fmt.Println(Ciano + Negrito + sb.String() + Reset)
-	linhaBorda(larguras)
+	fmt.Println(sb.String())
+	linhaBordaEstilo(larguras, "middle")
 }
 
-// TabelaLinha exibe uma linha de dados dentro da tabela formatada
+// TabelaLinha exibe uma linha de dados com espaçamento
 func TabelaLinha(valores []string, larguras []int) {
 	var sb strings.Builder
-	sb.WriteString("|")
+	sb.WriteString(CinzaBorda + "│" + Reset)
 	for i, val := range valores {
-		// Trunca o texto se for maior que a largura da coluna para não quebrar o layout
-		valFormatado := val
-		if len(val) > larguras[i] {
-			valFormatado = val[:larguras[i]-3] + "..."
-		}
-		formato := fmt.Sprintf(" %%-%ds |", larguras[i])
+		valFormatado := truncarTexto(val, larguras[i])
+		formato := fmt.Sprintf(" %s%%-%ds%s %s│%s", TextoBranco, larguras[i], Reset, CinzaBorda, Reset)
 		sb.WriteString(fmt.Sprintf(formato, valFormatado))
 	}
 	fmt.Println(sb.String())
 }
 
-// TabelaRodape fecha a estrutura da tabela
+// TabelaRodape fecha a tabela
 func TabelaRodape(larguras []int) {
-	linhaBorda(larguras)
+	linhaBordaEstilo(larguras, "bottom")
 }
 
-// Função auxiliar interna para desenhar as bordas horizontais da tabela
-func linhaBorda(larguras []int) {
-	var sb strings.Builder
-	sb.WriteString("+")
-	for _, l := range larguras {
-		sb.WriteString(strings.Repeat("-", l+2) + "+")
+// Função auxiliar para desenhar as bordas da tabela
+func linhaBordaEstilo(larguras []int, posicao string) {
+	var esq, meio, dir string
+	switch posicao {
+	case "top":
+		esq, meio, dir = "┌", "┬", "┐"
+	case "middle":
+		esq, meio, dir = "├", "┼", "┤"
+	case "bottom":
+		esq, meio, dir = "└", "┴", "┘"
 	}
-	fmt.Println(Cinza + sb.String() + Reset)
+
+	var sb strings.Builder
+	sb.WriteString(esq)
+	for i, l := range larguras {
+		sb.WriteString(strings.Repeat("─", l+2))
+		if i < len(larguras)-1 {
+			sb.WriteString(meio)
+		}
+	}
+	sb.WriteString(dir)
+	fmt.Println(CinzaBorda + sb.String() + Reset)
+}
+
+// Função auxiliar para truncar textos
+func truncarTexto(texto string, larguraMaxima int) string {
+	runas := []rune(texto)
+	if len(runas) <= larguraMaxima {
+		return texto
+	}
+
+	if larguraMaxima > 3 {
+		return string(runas[:larguraMaxima-3]) + "..."
+	}
+
+	if larguraMaxima > 0 && len(runas) >= larguraMaxima {
+		return string(runas[:larguraMaxima])
+	}
+
+	return ""
 }
