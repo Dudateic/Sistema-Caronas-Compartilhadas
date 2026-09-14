@@ -25,8 +25,8 @@ help:
 	@echo "  make build             - Compila todos os aplicativos "
 	@echo "  make clean             - Remove os binários compilados"
 	@echo "  make clear-data        - APAGA o banco de dados"
-	@echo "  make docker-up         - Sobe o ambiente usando Docker"
-	@echo "  make docker-down       - Derruba o ambiente Docker"
+	@echo "  make up         - Sobe o ambiente usando Docker"
+	@echo "  make down       - Derruba o ambiente Docker"
 	@echo
 
 
@@ -78,7 +78,7 @@ clear-data:
 
 # Docker
 up:
-	docker-compose up --build -d
+	docker compose up --build -d
 
 down:
-	docker-compose down
+	docker compose down

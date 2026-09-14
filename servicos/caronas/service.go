@@ -48,9 +48,6 @@ func InicializarCaronas() error {
 
 /**
  * Valida a rota e os dados da carona, monta os trechos e armazena a viagem em memoria.
- *
- * @param conn        Conexao ativa do motorista.
- * @param dadosBrutos Linha em texto JSON com os dados da publicacao.
  */
 func ProcessarPublicarCarona(conn net.Conn, dadosBrutos string) {
 	var req protocolo.PublicarCaronaRequisicao
@@ -104,7 +101,6 @@ func ProcessarPublicarCarona(conn net.Conn, dadosBrutos string) {
 	caronaID := ProximoCaronaID
 	ProximoCaronaID++
 
-	// Persiste o novo estado em disco no servidor
 	if err := persistencia.SalvarJSON(ArquivoCaronas, CaronasRegistradas); err != nil {
 		fmt.Printf("[ERRO] Falha ao persistir caronas: %v\n", err)
 	}
@@ -115,9 +111,6 @@ func ProcessarPublicarCarona(conn net.Conn, dadosBrutos string) {
 	responderPublicacao(conn, true, "Carona publicada com sucesso", caronaID)
 }
 
-/**
- * Envia ao motorista a confirmacao de publicacao e o ID gerado.
- */
 func responderPublicacao(conn net.Conn, sucesso bool, mensagem string, id int) {
 	resp := protocolo.PublicarCaronaResposta{
 		Tipo:     protocolo.TipoPublicarCaronaRes,
@@ -130,9 +123,6 @@ func responderPublicacao(conn net.Conn, sucesso bool, mensagem string, id int) {
 
 /**
  * Filtra e devolve todas as caronas criadas pelo motorista solicitante.
- *
- * @param conn        Conexao de retorno para o cliente.
- * @param dadosBrutos Linha em texto JSON com o identificador do motorista.
  */
 func ProcessarConsultarCaronas(conn net.Conn, dadosBrutos string) {
 	var req protocolo.ConsultarCaronasRequisicao
@@ -160,10 +150,7 @@ func ProcessarConsultarCaronas(conn net.Conn, dadosBrutos string) {
 }
 
 /**
- * Localiza a viagem pelo ID e remove da memoria caso pertencente ao motorista solicitante.
- *
- * @param conn        Conexao de retorno para o cliente.
- * @param dadosBrutos Linha em texto JSON com o ID da viagem e login do motorista.
+ * Localiza a viagem pelo ID e remove da memoria caso pertencente ao motorista.
  */
 func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 	var req protocolo.CancelarCaronaRequisicao
@@ -192,15 +179,12 @@ func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 		return
 	}
 
-	// Remove a viagem da lista em memoria
 	CaronasRegistradas = append(CaronasRegistradas[:idx], CaronasRegistradas[idx+1:]...)
 
-	// Dispara o evento de cancelamento para quem estiver escutando (pacote reservas)
 	if AoCancelarCarona != nil {
 		go AoCancelarCarona(req.CaronaID, req.Motorista)
 	}
 
-	// Persiste a remocao em disco no servidor
 	if err := persistencia.SalvarJSON(ArquivoCaronas, CaronasRegistradas); err != nil {
 		fmt.Printf("[ERRO] Falha ao persistir cancelamento de carona: %v\n", err)
 	}
@@ -217,14 +201,6 @@ func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 
 /**
  * Envia pedido de publicacao de rota pelo ClienteTCP e retorna o ID da viagem criada.
- *
- * @param cliente   Instancia ativa de conexao com o servidor.
- * @param motorista Nome do motorista autenticado.
- * @param rota      Lista sequencial de cidades da viagem.
- * @param data      Data de partida.
- * @param horario   Horario de saida.
- * @param assentos  Numero total de vagas disponiveis.
- * @param preco     Valor cobrado por cada trecho percorrido.
  */
 func PublicarCarona(cliente *conexao.ClienteTCP, motorista string, rota []string, data, horario string, assentos int, preco float64) (int, error) {
 	req := protocolo.PublicarCaronaRequisicao{
@@ -247,19 +223,14 @@ func PublicarCarona(cliente *conexao.ClienteTCP, motorista string, rota []string
 	}
 
 	if !resp.Sucesso {
-		fmt.Printf("Falha ao publicar: %s\n", resp.Mensagem)
-		return 0, nil
+		return 0, fmt.Errorf("falha ao publicar: %s", resp.Mensagem)
 	}
 
-	fmt.Printf("%s! ID da Carona: %d\n", resp.Mensagem, resp.CaronaID)
 	return resp.CaronaID, nil
 }
 
 /**
- * Requisita ao servidor as caronas cadastradas pelo motorista e exibe no terminal.
- *
- * @param cliente   Instancia ativa de conexao com o servidor.
- * @param motorista Nome do motorista autenticado.
+ * Requisita ao servidor as caronas cadastradas pelo motorista.
  */
 func ConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) ([]protocolo.CaronaDetalhada, error) {
 	req := protocolo.ConsultarCaronasRequisicao{
@@ -276,31 +247,11 @@ func ConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) ([]protocol
 		return nil, fmt.Errorf("falha ao ler caronas: %w", err)
 	}
 
-	if len(resp.Caronas) == 0 {
-		fmt.Println("Nenhuma carona cadastrada.")
-		return nil, nil
-	}
-
-	fmt.Println("\n                SUAS CARONAS                ")
-	for _, c := range resp.Caronas {
-		fmt.Printf("\n[Carona #%d] Data: %s | Horario: %s | Assentos: %d\n", c.ID, c.Data, c.Horario, c.AssentosTotais)
-		fmt.Printf("Rota: %v\n", c.Rota)
-		fmt.Println("Trechos:")
-		for _, t := range c.Trechos {
-			fmt.Printf("  - %s -> %s (Vagas livres: %d | R$ %.2f) | Passageiros: %v\n",
-				t.Origem, t.Destino, t.AssentosLivres, t.Preco, t.Passageiros)
-		}
-	}
-	fmt.Println("")
 	return resp.Caronas, nil
 }
 
 /**
  * Envia pedido ao servidor para cancelar uma carona pelo ID.
- *
- * @param cliente   Instancia ativa de conexao com o servidor.
- * @param caronaID  Identificador unico da carona a ser cancelada.
- * @param motorista Nome do motorista que registrou a carona.
  */
 func CancelarCarona(cliente *conexao.ClienteTCP, caronaID int, motorista string) (bool, error) {
 	req := protocolo.CancelarCaronaRequisicao{
@@ -319,10 +270,8 @@ func CancelarCarona(cliente *conexao.ClienteTCP, caronaID int, motorista string)
 	}
 
 	if !resp.Sucesso {
-		fmt.Printf("Erro ao cancelar: %s\n", resp.Mensagem)
-		return false, nil
+		return false, fmt.Errorf("erro ao cancelar: %s", resp.Mensagem)
 	}
 
-	fmt.Printf("%s!\n", resp.Mensagem)
 	return true, nil
 }

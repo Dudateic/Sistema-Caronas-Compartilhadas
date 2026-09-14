@@ -12,6 +12,7 @@ import (
 
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/visual"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/caronas"
 	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/usuarios"
 )
@@ -42,7 +43,7 @@ func LimparTela() {
 }
 
 func main() {
-	fmt.Println("         VAIJUNTO - MODULO DO MOTORISTA                   ")
+	visual.ExibirCabecalho("VAIJUNTO - MODULO DO MOTORISTA")
 
 	endereco := lerEntrada(fmt.Sprintf("Endereco do servidor TCP (Enter para %s): ", conexao.EnderecoPadrao))
 	if endereco == "" {
@@ -52,11 +53,12 @@ func main() {
 	fmt.Printf("Conectando ao servidor em %s...\n", endereco)
 	cliente, err := conexao.ConectarTCP(endereco, 5*time.Second)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao conectar: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao conectar: %v", err))
 		return
 	}
 	defer cliente.Fechar()
-	fmt.Println("Conexao estabelecida com sucesso!")
+	visual.MensagemSucesso("Conexao estabelecida com sucesso!")
+	time.Sleep(1 * time.Second)
 
 	// Fluxo de Autenticacao
 	motoristaLogado := telaAcesso(cliente)
@@ -74,11 +76,12 @@ func main() {
  */
 func telaAcesso(cliente *conexao.ClienteTCP) string {
 	for {
-		fmt.Println("\n                  AUTENTICACAO                    ")
+		LimparTela()
+		visual.ExibirCabecalho("AUTENTICACAO")
 		fmt.Println("1. Entrar (Login)")
 		fmt.Println("2. Criar Nova Conta (Cadastro)")
 		fmt.Println("0. Encerrar")
-		fmt.Println("")
+		fmt.Println()
 
 		opcao := lerEntrada("Escolha uma opcao: ")
 
@@ -88,18 +91,23 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
 			senha := lerEntrada("Senha: ")
 
 			if usuario == "" || senha == "" {
-				fmt.Println("[AVISO] Usuario e senha nao podem ser vazios.")
+				visual.MensagemAviso("Usuario e senha nao podem ser vazios.")
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 
 			fmt.Println("Validando credenciais...")
 			sucesso, err := usuarios.AutenticarCliente(cliente, usuario, senha, protocolo.PerfilMotorista)
 			if err != nil {
-				fmt.Printf("[ERRO] Falha na comunicacao com servidor: %v\n", err)
+				visual.MensagemErro(fmt.Sprintf("Falha na comunicacao com servidor: %v", err))
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 			if sucesso {
 				return usuario
+			} else {
+				visual.MensagemAviso("Credenciais invalidas.")
+				lerEntrada("\nPressione ENTER para continuar...")
 			}
 
 		case "2":
@@ -107,25 +115,29 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
 			senha := lerEntrada("Defina sua senha: ")
 
 			if usuario == "" || senha == "" {
-				fmt.Println("[AVISO] Preencha usuario e senha para se cadastrar.")
+				visual.MensagemAviso("Preencha usuario e senha para se cadastrar.")
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 
 			fmt.Println("Enviando solicitacao de cadastro...")
 			sucesso, err := usuarios.CadastrarCliente(cliente, usuario, senha, protocolo.PerfilMotorista)
 			if err != nil {
-				fmt.Printf("[ERRO] Falha ao registrar usuario: %v\n", err)
+				visual.MensagemErro(fmt.Sprintf("Falha ao registrar usuario: %v", err))
+				lerEntrada("\nPressione ENTER para continuar...")
 				continue
 			}
 			if sucesso {
-				fmt.Println("[SUCESSO] Conta criada com sucesso! Agora voce ja pode fazer login (Opcao 1).")
+				visual.MensagemSucesso("Conta criada com sucesso! Faca login na opcao 1.")
+				lerEntrada("\nPressione ENTER para continuar...")
 			}
 
 		case "0":
 			return ""
 
 		default:
-			fmt.Println("[AVISO] Opcao invalida, tente novamente.")
+			visual.MensagemAviso("Opcao invalida, tente novamente.")
+			lerEntrada("\nPressione ENTER para continuar...")
 		}
 	}
 }
@@ -136,12 +148,12 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
 func menuPrincipalMotorista(cliente *conexao.ClienteTCP, motorista string) {
 	for {
 		LimparTela()
-		fmt.Printf("\n             PAINEL DO MOTORISTA: %s                 \n", motorista)
+		visual.ExibirCabecalho(fmt.Sprintf("PAINEL DO MOTORISTA: %s", motorista))
 		fmt.Println("1. Publicar Nova Carona")
 		fmt.Println("2. Consultar Minhas Caronas")
 		fmt.Println("3. Cancelar Carona")
 		fmt.Println("0. Sair e Desconectar")
-		fmt.Println("")
+		fmt.Println()
 
 		opcao := lerEntrada("Selecione a opcao desejada: ")
 
@@ -156,7 +168,8 @@ func menuPrincipalMotorista(cliente *conexao.ClienteTCP, motorista string) {
 			fmt.Println("Desconectando do servidor... Ate logo!")
 			return
 		default:
-			fmt.Println("[AVISO] Opcao invalida. Digite um numero entre 0 e 3.")
+			visual.MensagemAviso("Opcao invalida. Digite um numero entre 0 e 3.")
+			lerEntrada("\nPressione ENTER para continuar...")
 		}
 	}
 }
@@ -165,9 +178,12 @@ func menuPrincipalMotorista(cliente *conexao.ClienteTCP, motorista string) {
  * Coleta os dados de trajeto e publica uma nova oferta no servidor.
  */
 func acaoPublicarCarona(cliente *conexao.ClienteTCP, motorista string) {
-	fmt.Println("\n              PUBLICAR NOVA CARONA                       ")
+	LimparTela()
+	visual.ExibirCabecalho("PUBLICAR NOVA CARONA")
 	fmt.Println("Informe as cidades da rota em ordem, separadas por virgula.")
 	fmt.Println("Exemplo: Salvador, Feira de Santana, Serrinha")
+	visual.LinhaDivisoria()
+
 	rotaTexto := lerEntrada("Rota: ")
 
 	partes := strings.Split(rotaTexto, ",")
@@ -180,26 +196,30 @@ func acaoPublicarCarona(cliente *conexao.ClienteTCP, motorista string) {
 	}
 
 	if len(rota) < 2 {
-		fmt.Println("[ERRO] Uma rota valida precisa de pelo menos 2 cidades (Origem e Destino).")
+		visual.MensagemErro("Uma rota valida precisa de pelo menos 2 cidades (Origem e Destino).")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	data := lerEntrada("Data da viagem (AAAA-MM-DD): ")
 	if strings.TrimSpace(data) == "" {
-		fmt.Println("[ERRO] A data nao pode ser vazia.")
+		visual.MensagemErro("A data nao pode ser vazia.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	horario := lerEntrada("Horario de saida (HH:MM): ")
 	if strings.TrimSpace(horario) == "" {
-		fmt.Println("[ERRO] O horario nao pode ser vazio.")
+		visual.MensagemErro("O horario nao pode ser vazio.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	assentosStr := lerEntrada("Quantidade total de vagas no veiculo: ")
 	assentos, err := strconv.Atoi(assentosStr)
 	if err != nil || assentos <= 0 {
-		fmt.Println("[ERRO] Quantidade de assentos deve ser um numero inteiro maior que zero.")
+		visual.MensagemErro("Quantidade de assentos deve ser um numero inteiro maior que zero.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
@@ -207,101 +227,147 @@ func acaoPublicarCarona(cliente *conexao.ClienteTCP, motorista string) {
 	precoStr = strings.ReplaceAll(precoStr, ",", ".")
 	preco, err := strconv.ParseFloat(precoStr, 64)
 	if err != nil || preco <= 0 {
-		fmt.Println("[ERRO] Preco invalido. Digite um valor monetario positivo.")
+		visual.MensagemErro("Preco invalido. Digite um valor monetario positivo.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	fmt.Println("\nPublicando carona no servidor...")
 	idCarona, err := caronas.PublicarCarona(cliente, motorista, rota, data, horario, assentos, preco)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao enviar carona: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao enviar carona: %v", err))
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	if idCarona > 0 {
-		fmt.Printf("[SUCESSO] Carona #%d cadastrada e aberta para reservas!\n", idCarona)
+		visual.MensagemSucesso(fmt.Sprintf("Carona #%d cadastrada e aberta para reservas!", idCarona))
+		lerEntrada("\nPressione ENTER para voltar ao menu...")
 	}
 }
 
 /**
- * Consulta e formata as caronas publicadas pelo motorista.
+ * Consulta e formata as caronas publicadas pelo motorista usando tabelas padronizadas.
  */
 func acaoConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) {
-    fmt.Println()
-    fmt.Println("Consultando suas caronas cadastradas...")
+	LimparTela()
+	visual.ExibirCabecalho("SUAS CARONAS CADASTRADAS")
 
-    listaCaronas, err := caronas.ConsultarCaronas(cliente, motorista)
-    if err != nil {
-        fmt.Printf("[ERRO] Falha ao consultar caronas: %v\n", err)
-        lerEntrada("\nPressione ENTER para continuar...")
-        return
-    }
+	listaCaronas, err := caronas.ConsultarCaronas(cliente, motorista)
+	if err != nil {
+		visual.MensagemErro(fmt.Sprintf("Falha ao consultar caronas: %v", err))
+		lerEntrada("\nPressione ENTER para continuar...")
+		return
+	}
 
-    if len(listaCaronas) == 0 {
-        fmt.Println("Voce nao possui nenhuma carona cadastrada.")
-        lerEntrada("\nPressione ENTER para continuar...")
-        return
-    }
+	if len(listaCaronas) == 0 {
+		visual.MensagemAviso("Voce nao possui nenhuma carona cadastrada.")
+		lerEntrada("\nPressione ENTER para continuar...")
+		return
+	}
 
-    fmt.Println("\n               SUAS CARONAS CADASTRADAS                ")
-    for _, c := range listaCaronas {
-        fmt.Printf("\n[Carona #%d] Data: %s às %s\n", c.ID, c.Data, c.Horario)
-        fmt.Println("Rota:", strings.Join(c.Rota, " -> "))
-        
-        if len(c.Trechos) > 0 {
-            fmt.Println("Trechos:")
-            for _, t := range c.Trechos {
-                fmt.Printf("  - %s -> %s | R$ %.2f\n", t.Origem, t.Destino, t.Preco)
-            }
-        }
-    }
+	// Exibição em Tabela Padronizada
+	colunasCabecalho := []string{"ID", "Data / Horario", "Rota Completa"}
+	largurasColunas := []int{4, 20, 35}
 
-    lerEntrada("\nPressione ENTER para voltar ao menu...")
+	visual.TabelaCabecalho(colunasCabecalho, largurasColunas)
+
+	for _, c := range listaCaronas {
+		dataHora := fmt.Sprintf("%s as %s", c.Data, c.Horario)
+		rotaCompleta := strings.Join(c.Rota, " -> ")
+
+		visual.TabelaLinha([]string{
+			strconv.Itoa(c.ID),
+			dataHora,
+			rotaCompleta,
+		}, largurasColunas)
+	}
+	visual.TabelaRodape(largurasColunas)
+
+	// Detalhes dos trechos e preços de forma limpa abaixo da tabela principal
+	fmt.Println()
+	visual.LinhaDivisoria()
+	fmt.Println("DETALHES DOS TRECHOS POR CARONA:")
+	for _, c := range listaCaronas {
+		fmt.Printf("\n[Carona #%d]\n", c.ID)
+		if len(c.Trechos) > 0 {
+			trechoCols := []string{"Trecho (Origem -> Destino)", "Preco por Trecho"}
+			trechoLarguras := []int{35, 15}
+			visual.TabelaCabecalho(trechoCols, trechoLarguras)
+			for _, t := range c.Trechos {
+				trechoStr := fmt.Sprintf("%s -> %s", t.Origem, t.Destino)
+				precoStr := fmt.Sprintf("R$ %.2f", t.Preco)
+				visual.TabelaLinha([]string{trechoStr, precoStr}, trechoLarguras)
+			}
+			visual.TabelaRodape(trechoLarguras)
+		}
+	}
+
+	lerEntrada("\nPressione ENTER para voltar ao menu...")
 }
 
 /**
  * Solicita o cancelamento de uma carona pertencente ao motorista.
  */
 func acaoCancelarCarona(cliente *conexao.ClienteTCP, motorista string) {
-	fmt.Println("\n                 CANCELAR CARONA                    ")
+	LimparTela()
+	visual.ExibirCabecalho("CANCELAR CARONA")
 
-	// Lista as caronas antes de pedir o ID
 	lista, err := caronas.ConsultarCaronas(cliente, motorista)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao consultar caronas: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao consultar caronas: %v", err))
+		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
 
-	// Se não tiver nenhuma carona, a própria função acima já avisa e retorna vazia
 	if len(lista) == 0 {
+		visual.MensagemAviso("Voce nao possui nenhuma carona cadastrada para cancelar.")
+		lerEntrada("\nPressione ENTER para continuar...")
 		return
 	}
+
+	// Tabela rápida para seleção de cancelamento
+	colunasCabecalho := []string{"ID", "Data / Horario", "Rota"}
+	largurasColunas := []int{4, 20, 30}
+	visual.TabelaCabecalho(colunasCabecalho, largurasColunas)
+	for _, c := range lista {
+		dataHora := fmt.Sprintf("%s as %s", c.Data, c.Horario)
+		rotaStr := strings.Join(c.Rota, " -> ")
+		visual.TabelaLinha([]string{strconv.Itoa(c.ID), dataHora, rotaStr}, largurasColunas)
+	}
+	visual.TabelaRodape(largurasColunas)
+	fmt.Println()
 
 	idStr := lerEntrada("Informe o ID da carona que deseja cancelar (ou 0 para voltar): ")
 	id, err := strconv.Atoi(idStr)
 
 	if err != nil || id < 0 {
-		fmt.Println("[ERRO] ID invalido.")
+		visual.MensagemErro("ID invalido.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 	if id == 0 {
 		fmt.Println("Cancelamento abortado.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	confirmacao := lerEntrada(fmt.Sprintf("Tem certeza que deseja cancelar a carona #%d? (s/N): ", id))
 	if strings.ToLower(confirmacao) != "s" {
 		fmt.Println("Cancelamento abortado.")
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	sucesso, err := caronas.CancelarCarona(cliente, id, motorista)
 	if err != nil {
-		fmt.Printf("[ERRO] Falha ao comunicar cancelamento: %v\n", err)
+		visual.MensagemErro(fmt.Sprintf("Falha ao comunicar cancelamento: %v", err))
+		lerEntrada("\nPressione ENTER para voltar...")
 		return
 	}
 
 	if sucesso {
-		fmt.Printf("[OK] Carona #%d cancelada com sucesso.\n", id)
+		visual.MensagemSucesso(fmt.Sprintf("Carona #%d cancelada com sucesso.", id))
+		lerEntrada("\nPressione ENTER para voltar ao menu...")
 	}
 }
