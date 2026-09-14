@@ -134,12 +134,18 @@ func buscarDFS(
 
 	for _, tr := range grafo[atual] {
 		if !visitados[tr.Destino] {
-			// Validacao espacial e temporal simples (horario da conexao deve ser >= ao trecho anterior se houver)
 			if len(caminho) > 0 {
 				ultimoTrecho := caminho[len(caminho)-1]
-				// Se for mesma carona ou horario posterior/igual
-				if ultimoTrecho.CaronaID != tr.CaronaID && tr.Horario < ultimoTrecho.Horario {
-					continue
+
+				// Se for de caronas diferentes, valida se o horário da próxima carona é viável
+				if ultimoTrecho.CaronaID != tr.CaronaID {
+					minutosUltimo := converterParaMinutos(ultimoTrecho.Horario)
+					minutosAtual := converterParaMinutos(tr.Horario)
+
+					// A próxima carona não pode sair antes da carona anterior
+					if minutosAtual < minutosUltimo {
+						continue // Descarta o itinerário por inviabilidade nas hrs
+					}
 				}
 			}
 
@@ -521,4 +527,10 @@ func ProcessarConsultarNotificacoes(conn net.Conn, dadosBrutos string) {
 		Notificacoes: minhas,
 	}
 	_ = json.NewEncoder(conn).Encode(resp)
+}
+
+func converterParaMinutos(horario string) int {
+	var h, m int
+	_, _ = fmt.Sscanf(horario, "%d:%d", &h, &m)
+	return h*60 + m
 }
