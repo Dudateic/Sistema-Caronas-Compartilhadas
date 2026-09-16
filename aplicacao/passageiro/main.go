@@ -28,7 +28,7 @@ func lerEntrada(rotulo string) string {
 }
 
 /**
- * Identifica o sistema operacional e limpa o terminal.
+ * Identifica o sistema operacional e limpa o terminal
  */
 func LimparTela() {
 	var cmd *exec.Cmd
@@ -69,7 +69,7 @@ func main() {
 }
 
 /**
- * Controla o login e o cadastro para o perfil de passageiro.
+ * Controla o login e o cadastro para o perfil de passageiro
  */
 func telaAcesso(cliente *conexao.ClienteTCP) string {
 	for {
@@ -140,7 +140,7 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
 }
 
 /**
- * Menu principal interativo do passageiro.
+ * Menu principal do passageiro
  */
 func menuPrincipalPassageiro(cliente *conexao.ClienteTCP, passageiro string) {
 	// Checa as notificações assim que loga
@@ -255,7 +255,7 @@ func acaoBuscarEReservar(cliente *conexao.ClienteTCP, passageiro string) {
 }
 
 /**
- * Exibe todas as reservas ativas associadas ao passageiro logado em formato tabular.
+ * Exibe todas as reservas ativas associadas ao passageiro logado
  */
 func acaoConsultarReservas(cliente *conexao.ClienteTCP, passageiro string) {
 	LimparTela()
@@ -311,7 +311,7 @@ func acaoConsultarReservas(cliente *conexao.ClienteTCP, passageiro string) {
 }
 
 /**
- * Solicita o cancelamento de um bilhete de reserva e a liberacao dos assentos.
+ * Solicita o cancelamento de um bilhete de reserva e a liberacao dos assentos
  */
 func acaoCancelarReserva(cliente *conexao.ClienteTCP, passageiro string) {
 	LimparTela()
@@ -383,7 +383,7 @@ func acaoCancelarReserva(cliente *conexao.ClienteTCP, passageiro string) {
 }
 
 /**
- * Consulta notificações e pausa para leitura.
+ * Consulta notificações e pausa para leitura
  */
 func acaoConsultarNotificacoes(cliente *conexao.ClienteTCP, passageiro string) {
 	LimparTela()

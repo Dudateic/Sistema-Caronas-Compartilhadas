@@ -16,7 +16,7 @@ func logEtapa(t *testing.T, etapa string, msg string, args ...any) {
 }
 
 // silenciarStdout redireciona temporariamente os.Stdout para "/dev/null",
-// pra não imprimir os fmt.Printf soltos dentro dos pacotes de serviço.
+// pra não imprimir os fmt.Printf soltos dentro dos pacotes de serviço
 func silenciarStdout(t *testing.T) func() {
 	original := os.Stdout
 	nulo, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)

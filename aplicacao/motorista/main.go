@@ -19,7 +19,7 @@ import (
 
 var scanner = bufio.NewScanner(os.Stdin)
 
-// lerEntrada le uma linha do terminal e remove espacos residuais
+// lerEntrada le uma linha do terminal e remove espacos
 func lerEntrada(rotulo string) string {
 	fmt.Print(rotulo)
 	if scanner.Scan() {
@@ -29,7 +29,7 @@ func lerEntrada(rotulo string) string {
 }
 
 /**
- * Identifica o sistema operacional e limpa o terminal.
+ * Identifica o sistema operacional e limpa o terminal
  */
 func LimparTela() {
 	var cmd *exec.Cmd
@@ -72,7 +72,7 @@ func main() {
 }
 
 /**
- * Controla as opcoes de login e novo cadastro para o perfil de motorista.
+ * Controla as opcoes de login e novo cadastro para o perfil de motorista
  */
 func telaAcesso(cliente *conexao.ClienteTCP) string {
 	for {
@@ -143,7 +143,7 @@ func telaAcesso(cliente *conexao.ClienteTCP) string {
 }
 
 /**
- * Loop interativo com as opcoes de gerenciamento de viagens do motorista.
+ * Opcoes de gerenciamento de viagens do motorista
  */
 func menuPrincipalMotorista(cliente *conexao.ClienteTCP, motorista string) {
 	for {
@@ -175,7 +175,7 @@ func menuPrincipalMotorista(cliente *conexao.ClienteTCP, motorista string) {
 }
 
 /**
- * Coleta os dados de trajeto e publica uma nova oferta no servidor.
+ * Coleta os dados de trajeto e publica uma nova oferta no servidor
  */
 func acaoPublicarCarona(cliente *conexao.ClienteTCP, motorista string) {
 	LimparTela()
@@ -247,7 +247,7 @@ func acaoPublicarCarona(cliente *conexao.ClienteTCP, motorista string) {
 }
 
 /**
- * Consulta e formata as caronas publicadas pelo motorista usando tabelas padronizadas.
+ * Consulta e formata as caronas publicadas pelo motorista
  */
 func acaoConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) {
 	LimparTela()
@@ -266,7 +266,6 @@ func acaoConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) {
 		return
 	}
 
-	// Exibição em Tabela Padronizada
 	colunasCabecalho := []string{"ID", "Data / Horario", "Rota Completa"}
 	largurasColunas := []int{4, 20, 35}
 
@@ -284,7 +283,7 @@ func acaoConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) {
 	}
 	visual.TabelaRodape(largurasColunas)
 
-	// Detalhes dos trechos e preços de forma limpa abaixo da tabela principal
+	// Detalhes dos trechos e preços
 	fmt.Println()
 	visual.LinhaDivisoria()
 	fmt.Println("DETALHES DOS TRECHOS POR CARONA:")
@@ -307,7 +306,7 @@ func acaoConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) {
 }
 
 /**
- * Solicita o cancelamento de uma carona pertencente ao motorista.
+ * Solicita o cancelamento de uma carona pertencente ao motorista
  */
 func acaoCancelarCarona(cliente *conexao.ClienteTCP, motorista string) {
 	LimparTela()
@@ -326,7 +325,7 @@ func acaoCancelarCarona(cliente *conexao.ClienteTCP, motorista string) {
 		return
 	}
 
-	// Tabela rápida para seleção de cancelamento
+	// Tabela de seleção de cancelamento
 	colunasCabecalho := []string{"ID", "Data / Horario", "Rota"}
 	largurasColunas := []int{4, 20, 30}
 	visual.TabelaCabecalho(colunasCabecalho, largurasColunas)

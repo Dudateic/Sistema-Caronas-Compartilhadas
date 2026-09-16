@@ -1,7 +1,3 @@
-/**
- * Pacote com as definicoes de mensagens para o gerenciamento de caronas.
- * @author Maria Eduarda
- */
 package protocolo
 
 // Tipos de mensagens trocadas nas operacoes de caronas
@@ -15,13 +11,13 @@ const (
 )
 
 /**
- * Representa um trecho especifico dentro de uma rota de carona.
+ * Representa um trecho especifico dentro de uma rota de carona
  *
- * @field Origem         Cidade de partida do trecho.
- * @field Destino        Cidade de chegada do trecho.
- * @field AssentosLivres Quantidade de assentos disponiveis no trecho.
+ * @field Origem         Cidade de partida do trecho
+ * @field Destino        Cidade de chegada do trecho
+ * @field AssentosLivres Quantidade de assentos disponiveis no trecho
  * @field Preco          Valor cobrado por passageiro neste trecho.
- * @field Passageiros    Lista de passageiros com assento confirmado no trecho.
+ * @field Passageiros    Lista de passageiros com assento confirmado no trecho
  */
 type TrechoInfo struct {
 	Origem         string   `json:"origem"`
@@ -32,16 +28,16 @@ type TrechoInfo struct {
 }
 
 /**
- * Representacao estruturada completa de uma carona.
+ * Representacao estruturada completa de uma carona
  *
- * @field ID             Identificador unico da carona.
- * @field Motorista      Identificador do motorista que cadastrou.
- * @field Data           Data da viagem (AAAA-MM-DD).
- * @field Horario        Horario de saida (HH:MM).
- * @field AssentosTotais Capacidade total do veiculo.
- * @field PrecoPorTrecho Valor cobrado por trecho percorrido.
- * @field Rota           Sequencia ordenada de cidades da viagem.
- * @field Trechos        Lista de trechos derivados da rota com controle de vagas.
+ * @field ID             Identificador unico da carona
+ * @field Motorista      Identificador do motorista que cadastrou
+ * @field Data           Data da viagem (AAAA-MM-DD)
+ * @field Horario        Horario de saida (HH:MM)
+ * @field AssentosTotais Capacidade total do veiculo
+ * @field PrecoPorTrecho Valor cobrado por trecho percorrido
+ * @field Rota           Sequencia ordenada de cidades da viagem
+ * @field Trechos        Lista de trechos derivados da rota com controle de vagas
  */
 type CaronaDetalhada struct {
 	ID             int          `json:"id"`
@@ -55,7 +51,7 @@ type CaronaDetalhada struct {
 }
 
 /**
- * Requisicao enviada pelo motorista para registrar nova carona.
+ * Requisicao enviada pelo motorista para registrar nova carona
  */
 type PublicarCaronaRequisicao struct {
 	Tipo           string   `json:"tipo"`
@@ -68,7 +64,7 @@ type PublicarCaronaRequisicao struct {
 }
 
 /**
- * Resposta retornada apos a criacao de uma carona.
+ * Resposta retornada apos a criacao de uma carona
  */
 type PublicarCaronaResposta struct {
 	Tipo     string `json:"tipo"`
@@ -78,7 +74,7 @@ type PublicarCaronaResposta struct {
 }
 
 /**
- * Requisicao para consultar caronas publicadas por um motorista.
+ * Requisicao para consultar caronas publicadas por um motorista
  */
 type ConsultarCaronasRequisicao struct {
 	Tipo      string `json:"tipo"`
@@ -86,7 +82,7 @@ type ConsultarCaronasRequisicao struct {
 }
 
 /**
- * Resposta com a lista de caronas do motorista.
+ * Resposta com a lista de caronas do motorista
  */
 type ConsultarCaronasResposta struct {
 	Tipo     string            `json:"tipo"`
@@ -96,7 +92,7 @@ type ConsultarCaronasResposta struct {
 }
 
 /**
- * Requisicao para cancelamento de carona pelo motorista.
+ * Requisicao para cancelamento de carona pelo motorista
  */
 type CancelarCaronaRequisicao struct {
 	Tipo      string `json:"tipo"`
@@ -105,7 +101,7 @@ type CancelarCaronaRequisicao struct {
 }
 
 /**
- * Resposta retornada apos a tentativa de cancelamento.
+ * Resposta retornada apos a tentativa de cancelamento
  */
 type CancelarCaronaResposta struct {
 	Tipo     string `json:"tipo"`

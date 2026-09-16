@@ -1,8 +1,3 @@
-/**
- * Pacote responsavel pelas regras de autenticacao e persistencia de usuarios.
- *
- * @author Maria Eduarda
- */
 package usuarios
 
 import (
@@ -23,7 +18,7 @@ var mutexUsuarios sync.Mutex
 const ArquivoUsuarios = "usuarios.json"
 
 /**
- * Estrutura interna para salvar os usuarios no arquivo JSON.
+ * Estrutura interna para salvar os usuarios no arquivo JSON
  */
 type UsuarioCadastrado struct {
 	TipoUsuario string `json:"tipo"`
@@ -37,7 +32,7 @@ func hashSimples(senha string) string {
 	var total uint64 = 0
 
 	for i := 0; i < len(senha); i++ {
-		x := uint64(senha[i]) // Valor numerico do caractere (ASCII)
+		x := uint64(senha[i]) // Valor numerico do caractere
 		total += (x*x + 1)    // Aplica x² + 1 e soma
 	}
 
@@ -52,7 +47,7 @@ func gerarID() string {
 }
 
 /**
- * Carrega a lista de contas salvas utilizando o servico de persistencia.
+ * Carrega a lista de contas salvas utilizando o servico de persistencia
  */
 func carregarUsuariosDoBanco() ([]UsuarioCadastrado, error) {
 	var listaUsuarios []UsuarioCadastrado
@@ -63,7 +58,7 @@ func carregarUsuariosDoBanco() ([]UsuarioCadastrado, error) {
 }
 
 /**
- * Grava a lista atualizada de usuarios no arquivo via servico de persistencia.
+ * Grava a lista atualizada de usuarios no arquivo via servico de persistencia
  */
 func salvarUsuariosNoBanco(usuarios []UsuarioCadastrado) error {
 	if err := persistencia.SalvarJSON(ArquivoUsuarios, usuarios); err != nil {
@@ -73,10 +68,10 @@ func salvarUsuariosNoBanco(usuarios []UsuarioCadastrado) error {
 }
 
 /**
- * Recebe a solicitacao de novo usuario, confere se o nome ja existe e salva no arquivo.
+ * Recebe a solicitacao de novo usuario, confere se o nome ja existe e salva no arquivo
  *
- * @param conn        Conexao do cliente que enviou os dados.
- * @param dadosBrutos Texto JSON com o pedido de cadastro.
+ * @param conn        Conexao do cliente que enviou os dados
+ * @param dadosBrutos Texto JSON com o pedido de cadastro
  */
 func ProcessarCadastro(conn net.Conn, dadosBrutos string) {
 	var req protocolo.CadastroRequisicao
@@ -131,7 +126,7 @@ func ProcessarCadastro(conn net.Conn, dadosBrutos string) {
 }
 
 /**
- * Envia de volta para o cliente o resultado da criacao de conta.
+ * Envia de volta para o cliente o resultado da criacao de conta
  */
 func responderCadastro(conn net.Conn, sucesso bool, mensagem string) {
 	resp := protocolo.CadastroResposta{
@@ -143,10 +138,10 @@ func responderCadastro(conn net.Conn, sucesso bool, mensagem string) {
 }
 
 /**
- * Confere o usuario e a senha informados na lista de contas e autoriza a entrada.
+ * Confere o usuario e a senha informados na lista de contas e autoriza a entrada
  *
- * @param conn        Conexao do cliente que enviou o login.
- * @param dadosBrutos Texto JSON com as credenciais.
+ * @param conn        Conexao do cliente que enviou o login
+ * @param dadosBrutos Texto JSON com as credenciais
  */
 func ProcessarLogin(conn net.Conn, dadosBrutos string) {
 	var req protocolo.LoginRequisicao
@@ -188,7 +183,7 @@ func ProcessarLogin(conn net.Conn, dadosBrutos string) {
 }
 
 /**
- * Envia de volta para o cliente a resposta de login informando se entrou, o perfil e o ID.
+ * Envia de volta para o cliente a resposta de login informando se entrou, o perfil e o ID
  */
 func responderLogin(conn net.Conn, sucesso bool, mensagem string, tipoUsuario string, idUsuario string) {
 	resp := protocolo.LoginResposta{
@@ -202,12 +197,12 @@ func responderLogin(conn net.Conn, sucesso bool, mensagem string, tipoUsuario st
 }
 
 /**
- * Envia os dados de cadastro para o servidor e aguarda a confirmacao.
+ * Envia os dados de cadastro para o servidor e aguarda a confirmacao
  *
- * @param cliente Instancia de conexao com o servidor.
- * @param usuario Nome de usuario escolhido.
- * @param senha   Senha definida.
- * @param perfil  Tipo de conta ("motorista" ou "passageiro").
+ * @param cliente Instancia de conexao com o servidor
+ * @param usuario Nome de usuario escolhido
+ * @param senha   Senha definida
+ * @param perfil  Tipo de conta ("motorista" ou "passageiro")
  */
 func CadastrarCliente(cliente *conexao.ClienteTCP, usuario string, senha string, perfil string) (bool, error) {
 	req := protocolo.CadastroRequisicao{
@@ -236,12 +231,12 @@ func CadastrarCliente(cliente *conexao.ClienteTCP, usuario string, senha string,
 }
 
 /**
- * Envia o login para o servidor e confere se a conta bate com o perfil esperado.
+ * Envia o login para o servidor e confere se a conta bate com o perfil esperado
  *
- * @param cliente        Instancia de conexao com o servidor.
- * @param usuario        Nome do usuario.
- * @param senha          Senha de acesso.
- * @param perfilEsperado Perfil exigido ("motorista" ou "passageiro").
+ * @param cliente        Instancia de conexao com o servidor
+ * @param usuario        Nome do usuario
+ * @param senha          Senha de acesso
+ * @param perfilEsperado Perfil exigido ("motorista" ou "passageiro")
  */
 func AutenticarCliente(cliente *conexao.ClienteTCP, usuario string, senha string, perfilEsperado string) (bool, error) {
 	req := protocolo.LoginRequisicao{

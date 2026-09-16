@@ -82,7 +82,7 @@ func main() {
 }
 
 /**
- * Atende continuamente as requisicoes de um cliente conectado.
+ * Atende continuamente as requisicoes de um cliente conectado
  */
 func tratarCliente(conn net.Conn) {
 	remoto := conn.RemoteAddr().String()
@@ -123,7 +123,7 @@ func tratarCliente(conn net.Conn) {
 }
 
 /**
- * Encaminha o JSON bruto para a funcao de processamento apropriada.
+ * Encaminha o JSON para a funcao de processamento
  */
 func rotearRequisicao(conn net.Conn, tipo string, dadosBrutos string, remoto string) {
 	switch tipo {
@@ -158,7 +158,7 @@ func rotearRequisicao(conn net.Conn, tipo string, dadosBrutos string, remoto str
 	case protocolo.TipoCancelarReservaReq:
 		reservas.ProcessarCancelarReserva(conn, dadosBrutos)
 
-	// notificações
+	//  Servico de Notificacoes (Passageiro)
 	case protocolo.TipoConsultarNotificacoesReq:
 		reservas.ProcessarConsultarNotificacoes(conn, dadosBrutos)
 

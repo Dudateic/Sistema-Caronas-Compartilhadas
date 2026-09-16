@@ -1,8 +1,3 @@
-/**
- * Pacote responsavel pelas buscas de itinerarios (DFS) e realizacao de reservas.
- *
- * @author Maria Eduarda
- */
 package reservas
 
 import (
@@ -49,7 +44,7 @@ func InicializarReservas() error {
 }
 
 /**
- * Procura rotas diretas e combinadas entre diferentes caronas para a data informada.
+ * Procura rotas diretas e combinadas entre diferentes caronas para a data informada
  */
 func ProcessarBuscarItinerarios(conn net.Conn, dadosBrutos string) {
 	var req protocolo.BuscarItinerariosRequisicao
@@ -106,7 +101,7 @@ func ProcessarBuscarItinerarios(conn net.Conn, dadosBrutos string) {
 }
 
 /**
- * Algoritmo recursivo de busca que percorre as conexoes de cidades.
+ * Algoritmo recursivo de busca que percorre as conexoes de cidades
  */
 func buscarDFS(
 	atual string,
@@ -169,7 +164,7 @@ func responderBusca(conn net.Conn, sucesso bool, mensagem string, itinerarios []
 }
 
 /**
- * Realiza a reserva atomica, garantindo vaga em todos os trechos antes de decrementar.
+ * Realiza a reserva atomica, garantindo vaga em todos os trechos antes de decrementar
  */
 func ProcessarReservarItinerario(conn net.Conn, dadosBrutos string) {
 	var req protocolo.ReservarRequisicao
@@ -190,7 +185,7 @@ func ProcessarReservarItinerario(conn net.Conn, dadosBrutos string) {
 	MutexReservas.Lock()
 	defer MutexReservas.Unlock()
 
-	// Validacao atomica de todos os trechos
+	// Validacao de todos os trechos
 	for _, trReq := range req.Trechos {
 		encontrado := false
 		for _, c := range caronas.CaronasRegistradas {
@@ -267,7 +262,7 @@ func responderReserva(conn net.Conn, sucesso bool, mensagem string, id int) {
 }
 
 /**
- * Retorna as reservas pertencentes ao passageiro.
+ * Retorna as reservas pertencentes ao passageiro
  */
 func ProcessarConsultarReservas(conn net.Conn, dadosBrutos string) {
 	var req protocolo.ConsultaReservasRequisicao
@@ -294,7 +289,7 @@ func ProcessarConsultarReservas(conn net.Conn, dadosBrutos string) {
 }
 
 /**
- * Cancela a reserva e restaura os assentos mantendo a sincronizacao correta.
+ * Cancela a reserva e restaura os assentos mantendo a sincronizacao correta
  */
 func ProcessarCancelarReserva(conn net.Conn, dadosBrutos string) {
 	var req protocolo.CancelarReservaRequisicao
@@ -454,7 +449,6 @@ func CancelarMinhaReserva(cliente *conexao.ClienteTCP, reservaID int, passageiro
 	return resp.Sucesso, nil
 }
 
-// LimparReservasDaCarona exclui as reservas órfãs e notifica os passageiros
 func LimparReservasDaCarona(caronaID int, motorista string) {
 	MutexReservas.Lock()
 	defer MutexReservas.Unlock()

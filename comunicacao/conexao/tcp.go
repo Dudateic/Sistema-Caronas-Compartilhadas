@@ -22,7 +22,7 @@ const (
 )
 
 /**
- * Encapsula a conexao de rede e os manipuladores de fluxo (stream).
+ * Encapsula a conexao de rede e os manipuladores de fluxo (stream)
  */
 type ClienteTCP struct {
 	endereco string
@@ -33,7 +33,7 @@ type ClienteTCP struct {
 }
 
 /**
- * Cria a conexao de rede com controle de tempo limite (timeout).
+ * Cria a conexao de rede com controle de tempo limite (timeout)
  */
 func ConectarTCP(endereco string, timeout ...time.Duration) (*ClienteTCP, error) {
 	if endereco == "" {
@@ -60,7 +60,7 @@ func ConectarTCP(endereco string, timeout ...time.Duration) (*ClienteTCP, error)
 }
 
 /**
- * Encerra o socket de rede e libera a porta/recurso do sistema.
+ * Encerra o socket de rede e libera a porta/recurso do sistema
  */
 func (c *ClienteTCP) Fechar() error {
 	if c.conn != nil {
@@ -70,7 +70,7 @@ func (c *ClienteTCP) Fechar() error {
 }
 
 /**
- * Tenta restabelecer a conexao com o servidor caso tenha caido (Auto-Healing).
+ * Tenta restabelecer a conexao com o servidor caso tenha caido
  */
 func (c *ClienteTCP) Reconectar() error {
 	maxTentativas := 3
@@ -78,7 +78,7 @@ func (c *ClienteTCP) Reconectar() error {
 		fmt.Printf("\n[REDE] Tentativa de reconexao automatica %d/%d...\n", i, maxTentativas)
 
 		if c.conn != nil {
-			_ = c.conn.Close() // Fecha o socket zumbi forçadamente
+			_ = c.conn.Close() // Fecha o socket forçadamente
 		}
 
 		// Timeout mais curto (1s) nas tentativas de reconexao para nao travar o usuario
@@ -97,7 +97,7 @@ func (c *ClienteTCP) Reconectar() error {
 }
 
 /**
- * Converte a struct para JSON e transmite pelo socket, anexando '\n' ao final.
+ * Converte a struct para JSON e transmite pelo socket, anexando '\n' ao final
  */
 func (c *ClienteTCP) EnviarJSON(dados any) error {
 	// Garante que o encoder aponte para o socket atual (caso tenha ocorrido reconexao previa)
@@ -121,7 +121,7 @@ func (c *ClienteTCP) EnviarJSON(dados any) error {
 }
 
 /**
- * Aguarda a chegada de uma mensagem JSON e preenche a struct informada.
+ * Aguarda a chegada de uma mensagem JSON e preenche a struct informada
  */
 func (c *ClienteTCP) LerEDecodificarJSON(destino any) error {
 	c.decoder = json.NewDecoder(c.conn)
@@ -138,7 +138,7 @@ func (c *ClienteTCP) LerEDecodificarJSON(destino any) error {
 }
 
 /**
- * Le texto ate encontrar o delimitador de quebra de linha.
+ * Le texto ate encontrar o delimitador de quebra de linha
  */
 func (c *ClienteTCP) LerLinhaTexto() (string, error) {
 	linha, err := c.leitor.ReadString('\n')

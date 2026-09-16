@@ -1,22 +1,15 @@
-/**
- * Pacote com as definicoes de mensagens para busca, reserva e cancelamento por passageiros.
- * @author Maria Eduarda
- */
 package protocolo
 
 // Tipos de mensagens trocadas nas operacoes de passageiro
 const (
-	TipoBuscarItinerariosReq  = "buscar_itinerarios"
-	TipoBuscarItinerariosRes  = "buscar_itinerarios_resposta"
-	TipoReservarItinerarioReq = "reservar_itinerario"
-	TipoReservarItinerarioRes = "reservar_resposta"
-	TipoConsultarReservasReq  = "consultar_reservas_passageiro"
-	TipoConsultarReservasRes  = "consultar_reservas_resposta"
-	TipoCancelarReservaReq    = "cancelar_reserva_passageiro"
-	TipoCancelarReservaRes    = "cancelar_reserva_resposta"
-)
-
-const (
+	TipoBuscarItinerariosReq     = "buscar_itinerarios"
+	TipoBuscarItinerariosRes     = "buscar_itinerarios_resposta"
+	TipoReservarItinerarioReq    = "reservar_itinerario"
+	TipoReservarItinerarioRes    = "reservar_resposta"
+	TipoConsultarReservasReq     = "consultar_reservas_passageiro"
+	TipoConsultarReservasRes     = "consultar_reservas_resposta"
+	TipoCancelarReservaReq       = "cancelar_reserva_passageiro"
+	TipoCancelarReservaRes       = "cancelar_reserva_resposta"
 	TipoConsultarNotificacoesReq = "consultar_notificacoes"
 	TipoConsultarNotificacoesRes = "consultar_notificacoes_resposta"
 )
@@ -39,7 +32,7 @@ type ConsultarNotificacoesResposta struct {
 }
 
 /**
- * Representa um segmento de viagem associado a uma carona especifica.
+ * Representa um segmento de viagem associado a uma carona especifica
  */
 type TrechoItinerario struct {
 	CaronaID  int     `json:"carona_id"`
@@ -51,7 +44,7 @@ type TrechoItinerario struct {
 }
 
 /**
- * Opcao de viagem completa (direta ou combinando múltiplos motoristas).
+ * Opcao de viagem completa (direta ou combinando múltiplos motoristas)
  */
 type Itinerario struct {
 	Data       string             `json:"data"`
@@ -60,7 +53,7 @@ type Itinerario struct {
 }
 
 /**
- * Registro de confirmacao de reserva de um passageiro.
+ * Registro de confirmacao de reserva de um passageiro
  */
 type ReservaDetalhada struct {
 	ID         int                `json:"id"`
@@ -71,7 +64,7 @@ type ReservaDetalhada struct {
 }
 
 /**
- * Requisicao para consultar rotas disponiveis entre duas cidades.
+ * Requisicao para consultar rotas disponiveis entre duas cidades
  */
 type BuscarItinerariosRequisicao struct {
 	Tipo    string `json:"tipo"`
@@ -81,7 +74,7 @@ type BuscarItinerariosRequisicao struct {
 }
 
 /**
- * Resposta com as opcoes de itinerarios encontrados via algoritmo DFS.
+ * Resposta com as opcoes de itinerarios encontrados via algoritmo DFS
  */
 type BuscarItinerariosResposta struct {
 	Tipo        string       `json:"tipo"`
@@ -91,7 +84,7 @@ type BuscarItinerariosResposta struct {
 }
 
 /**
- * Requisicao para efetuar reserva atomica dos trechos escolhidos.
+ * Requisicao para efetuar reserva atomica dos trechos escolhidos
  */
 type ReservarRequisicao struct {
 	Tipo       string             `json:"tipo"`
@@ -101,7 +94,7 @@ type ReservarRequisicao struct {
 }
 
 /**
- * Resposta da tentativa de reserva atomica.
+ * Resposta da tentativa de reserva atomica
  */
 type ReservarResposta struct {
 	Tipo      string `json:"tipo"`
@@ -111,7 +104,7 @@ type ReservarResposta struct {
 }
 
 /**
- * Requisicao para listar as reservas ativas do passageiro.
+ * Requisicao para listar as reservas ativas do passageiro
  */
 type ConsultaReservasRequisicao struct {
 	Tipo       string `json:"tipo"`
@@ -119,7 +112,7 @@ type ConsultaReservasRequisicao struct {
 }
 
 /**
- * Resposta com a lista de reservas efetuadas pelo passageiro.
+ * Resposta com a lista de reservas efetuadas pelo passageiro
  */
 type ConsultaReservasResposta struct {
 	Tipo     string             `json:"tipo"`
@@ -129,7 +122,7 @@ type ConsultaReservasResposta struct {
 }
 
 /**
- * Requisicao de cancelamento de reserva pelo passageiro.
+ * Requisicao de cancelamento de reserva pelo passageiro
  */
 type CancelarReservaRequisicao struct {
 	Tipo       string `json:"tipo"`
@@ -138,7 +131,7 @@ type CancelarReservaRequisicao struct {
 }
 
 /**
- * Resposta confirmando o cancelamento e liberacao de vagas.
+ * Resposta confirmando o cancelamento e liberacao de vagas
  */
 type CancelarReservaResposta struct {
 	Tipo     string `json:"tipo"`

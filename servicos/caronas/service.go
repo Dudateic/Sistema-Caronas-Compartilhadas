@@ -1,8 +1,3 @@
-/**
- * Pacote responsavel pelo gerenciamento de estado e regras de negocio das caronas.
- *
- * @author Maria Eduarda
- */
 package caronas
 
 import (
@@ -47,7 +42,7 @@ func InicializarCaronas() error {
 }
 
 /**
- * Valida a rota e os dados da carona, monta os trechos e armazena a viagem em memoria.
+ * Valida a rota e os dados da carona, monta os trechos e armazena a viagem em memoria
  */
 func ProcessarPublicarCarona(conn net.Conn, dadosBrutos string) {
 	var req protocolo.PublicarCaronaRequisicao
@@ -122,7 +117,7 @@ func responderPublicacao(conn net.Conn, sucesso bool, mensagem string, id int) {
 }
 
 /**
- * Filtra e devolve todas as caronas criadas pelo motorista solicitante.
+ * Filtra e devolve todas as caronas criadas pelo motorista solicitante
  */
 func ProcessarConsultarCaronas(conn net.Conn, dadosBrutos string) {
 	var req protocolo.ConsultarCaronasRequisicao
@@ -150,7 +145,7 @@ func ProcessarConsultarCaronas(conn net.Conn, dadosBrutos string) {
 }
 
 /**
- * Localiza a viagem pelo ID e remove da memoria caso pertencente ao motorista.
+ * Localiza a viagem pelo ID e remove da memoria caso pertencente ao motorista
  */
 func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 	var req protocolo.CancelarCaronaRequisicao
@@ -200,7 +195,7 @@ func ProcessarCancelarCarona(conn net.Conn, dadosBrutos string) {
 }
 
 /**
- * Envia pedido de publicacao de rota pelo ClienteTCP e retorna o ID da viagem criada.
+ * Envia pedido de publicacao de rota pelo ClienteTCP e retorna o ID da viagem criada
  */
 func PublicarCarona(cliente *conexao.ClienteTCP, motorista string, rota []string, data, horario string, assentos int, preco float64) (int, error) {
 	req := protocolo.PublicarCaronaRequisicao{
@@ -230,7 +225,7 @@ func PublicarCarona(cliente *conexao.ClienteTCP, motorista string, rota []string
 }
 
 /**
- * Requisita ao servidor as caronas cadastradas pelo motorista.
+ * Requisita ao servidor as caronas cadastradas pelo motorista
  */
 func ConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) ([]protocolo.CaronaDetalhada, error) {
 	req := protocolo.ConsultarCaronasRequisicao{
@@ -251,7 +246,7 @@ func ConsultarCaronas(cliente *conexao.ClienteTCP, motorista string) ([]protocol
 }
 
 /**
- * Envia pedido ao servidor para cancelar uma carona pelo ID.
+ * Envia pedido ao servidor para cancelar uma carona pelo ID
  */
 func CancelarCarona(cliente *conexao.ClienteTCP, caronaID int, motorista string) (bool, error) {
 	req := protocolo.CancelarCaronaRequisicao{

@@ -1,6 +1,3 @@
-/**
- * Pacote responsavel pela persistencia em disco no servidor.
- */
 package persistencia
 
 import (
@@ -25,7 +22,7 @@ func init() {
 }
 
 /**
- * Salva qualquer estrutura de dados em formato JSON indentado no caminho informado.
+ * Salva qualquer estrutura de dados em formato JSON indentado no caminho informado
  *
  * @param nomeArquivo Nome do arquivo (ex: "caronas.json", "reservas.json", "usuarios.json")
  * @param dados       Estrutura (slice, map, struct) a ser serializada
@@ -54,8 +51,8 @@ func SalvarJSON(nomeArquivo string, dados any) error {
 }
 
 /**
- * Carrega e desserializa o conteudo de um arquivo JSON no destino apontado.
- * Se o arquivo nao existir, simplesmente nao altera o destino e retorna nil.
+ * Carrega e desserializa o conteudo de um arquivo JSON no destino apontado
+ * Se o arquivo nao existir, simplesmente nao altera o destino e retorna nil
  *
  * @param nomeArquivo Nome do arquivo dentro da pasta dados (ex: "caronas.json")
  * @param destino     Ponteiro para a estrutura que recebera os dados
