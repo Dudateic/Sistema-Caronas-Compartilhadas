@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/caronas"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/reservas"
+	"Sistema-de-caronas-compartilhadas/comunicacao/conexao"
+	"Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"Sistema-de-caronas-compartilhadas/servicos/caronas"
+	"Sistema-de-caronas-compartilhadas/servicos/reservas"
 )
 
 type resultadoPassageiro struct {

@@ -1,3 +1,3 @@
-module VAIJUNTO-Sistema-de-caronas-compartilhadas
+module Sistema-de-caronas-compartilhadas
 
 go 1.26

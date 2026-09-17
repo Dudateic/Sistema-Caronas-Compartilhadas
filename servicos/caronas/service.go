@@ -6,9 +6,9 @@ import (
 	"net"
 	"sync"
 
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/persistencia"
+	"Sistema-de-caronas-compartilhadas/comunicacao/conexao"
+	"Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"Sistema-de-caronas-compartilhadas/servicos/persistencia"
 )
 
 // Estado compartilhado em memoria protegido por Mutex

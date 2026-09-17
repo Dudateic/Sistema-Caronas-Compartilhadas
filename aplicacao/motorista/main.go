@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/visual"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/caronas"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/usuarios"
+	"Sistema-de-caronas-compartilhadas/comunicacao/conexao"
+	"Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"Sistema-de-caronas-compartilhadas/comunicacao/visual"
+	"Sistema-de-caronas-compartilhadas/servicos/caronas"
+	"Sistema-de-caronas-compartilhadas/servicos/usuarios"
 )
 
 var scanner = bufio.NewScanner(os.Stdin)

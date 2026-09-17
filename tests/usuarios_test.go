@@ -6,9 +6,9 @@ import (
 	"sync"
 	"testing"
 
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/usuarios"
+	"Sistema-de-caronas-compartilhadas/comunicacao/conexao"
+	"Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"Sistema-de-caronas-compartilhadas/servicos/usuarios"
 )
 
 type resultadoCriacaoConta struct {

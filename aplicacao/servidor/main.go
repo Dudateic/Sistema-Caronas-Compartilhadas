@@ -11,12 +11,12 @@ import (
 	"strings"
 	"syscall"
 
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/conexao"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/caronas"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/persistencia"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/reservas"
-	"VAIJUNTO-Sistema-de-caronas-compartilhadas/servicos/usuarios"
+	"Sistema-de-caronas-compartilhadas/comunicacao/conexao"
+	"Sistema-de-caronas-compartilhadas/comunicacao/protocolo"
+	"Sistema-de-caronas-compartilhadas/servicos/caronas"
+	"Sistema-de-caronas-compartilhadas/servicos/persistencia"
+	"Sistema-de-caronas-compartilhadas/servicos/reservas"
+	"Sistema-de-caronas-compartilhadas/servicos/usuarios"
 )
 
 func main() {
