@@ -38,6 +38,7 @@ A arquitetura implementa um único servidor centralizado e dispensa integralment
 * **Controle de Concorrência e Sincronização:** O servidor delega as requisições ao bloco de Gerenciamento de Goroutines / Threads. A sincronização transacional para prevenir sobrevenda de vagas é garantida por Exclusão Mútua nativa (`sync.RWMutex`), protegendo o Estado Global em Memória em um protocolo de reserva de duas fases.
 * **Rotas e Armazenamento:** A partir do estado em memória, a aplicação ramifica-se para o Módulo de Roteamento Baseado em Grafos e para o serviço de Persistência, que mantém os registros do sistema no Subsistema de Armazenamento através de Arquivos JSON locais.
 
+``` text
 ├── aplicacao/
 │   ├── motorista/main.go       # Cliente CLI interativo para Motoristas
 │   ├── passageiro/main.go      # Cliente CLI interativo para Passageiros
@@ -69,6 +70,7 @@ A arquitetura implementa um único servidor centralizado e dispensa integralment
 ├── LICENSE                     # Licença do software
 ├── Makefile                    # Automação de compilação, execução e testes
 └── README.md                   # Documentação principal do projeto
+```
 
 ## Módulo de Roteamento e Composição de Trechos
 O VAIJUNTO controla a disponibilidade de assentos individualmente por trechos e não pela viagem inteira. O grafo lida com múltiplas possibilidades simultâneas. Por exemplo, diversos motoristas podem partir de Salvador rumo a cidades como Alagoinhas, Feira de Santana ou Simões Filho em horários variados (como 08:00, 09:00 ou 17:00), oferecendo diferentes combinações de preços e capacidades de vagas.
